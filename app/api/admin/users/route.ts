@@ -95,23 +95,61 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         await connectToDatabase();
+        // Get token from cookie
+        const token = request.cookies.get('auth_token')?.value;
+        if (!token) {
+            return NextResponse.json(
+                { success: false, message: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+        // Verify token
+        const decoded = verifyToken(token);
+        if (!decoded) {
+            return NextResponse.json(
+                { success: false, message: 'Invalid token' },
+                { status: 401 }
+            );
+        }
+        // Find requesting user
+        const requestingUser = await User.findById(decoded.id).exec();
+        if (!requestingUser) {
+            return NextResponse.json(
+                { success: false, message: 'Requesting user not found' },
+                { status: 404 }
+            );
+        }
         const data = await request.json();
-        const { id, password, ...updateData } = data;
+        const { id, password, role, ...updateData } = data;
+        // If role is being changed, only superAdmin can do it
 
+        const _id = id;
+        if (role !== undefined) {
+            if (requestingUser.role !== 'superAdmin') {
+                return NextResponse.json(
+                    { success: false, message: 'Only superAdmin can change user roles' },
+                    { status: 403 }
+                );
+            }
 
+            if (role === 'superAdmin') {
+                return NextResponse.json(
+                    { success: false, message: 'There can only be one superAdmin' },
+                    { status: 400 }
+                );
+            }
+        }
         const user = await User.findByIdAndUpdate(
-            id,
-            { ...updateData, updatedAt: new Date() },
+            _id,
+            { ...updateData, ...(role !== undefined ? { role } : {}), updatedAt: new Date() },
             { new: true }
         );
-
         if (!user) {
             return NextResponse.json(
                 { error: 'User not found' },
                 { status: 404 }
             );
         }
-
         return NextResponse.json(user);
     } catch (error) {
         console.error('Error updating user:', error);

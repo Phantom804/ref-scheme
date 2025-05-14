@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '10');
         const search = searchParams.get('search') || '';
         const productName = searchParams.get('productName') || '';
+        const category = searchParams.get('category') || '';
         const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
         const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
         const skip = (page - 1) * limit;
@@ -29,6 +30,10 @@ export async function GET(request: NextRequest) {
         // Product name specific filter
         if (productName) {
             searchQuery.name = { $regex: productName, $options: 'i' };
+        }
+
+        if (category) {
+            searchQuery.category = category;
         }
 
         // Price range filter

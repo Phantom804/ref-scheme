@@ -83,68 +83,70 @@ export default function RefrenceProducts() {
 
     return (
         <div className="bg-[#1A1F2C] rounded-lg overflow-hidden">
-            {loading ? (
-                <div className="flex justify-center items-center py-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-                    <span className="ml-2 text-gray-400">Loading referral orders...</span>
-                </div>
-            ) : products.length === 0 ? (
-                <div className="text-center py-10">
-                    <p className="text-gray-400">No referral orders found</p>
-                </div>
-            ) : (
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
-                            <TableHead className="text-gray-400">Name</TableHead>
-                            <TableHead className="text-gray-400">Transaction ID</TableHead>
-                            <TableHead className="text-gray-400">Product ID</TableHead>
-                            <TableHead className="text-gray-400">Quantity</TableHead>
-                            <TableHead className="text-gray-400">Price</TableHead>
-                            <TableHead className="text-gray-400">Commission</TableHead>
-                            <TableHead className="text-gray-400">Bought On</TableHead>
-                            <TableHead className="text-gray-400">Bought By</TableHead>
-                            <TableHead className="text-gray-400">Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {products.map((product) => (
-                            <TableRow key={product.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
-                                <TableCell className="font-medium flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center">
-                                        <span className="text-white">$</span>
-                                    </div>
-                                    {product.name}
-                                </TableCell>
-                                <TableCell>{product.transactionId}</TableCell>
-                                <TableCell>{product.id}</TableCell>
-                                <TableCell>{product.quantity}</TableCell>
-                                <TableCell className="text-[#3B82F6]">{product.price}</TableCell>
-                                <TableCell className="text-[#4ADE80]">{product.commission}</TableCell>
-                                <TableCell>{product.boughtOn}</TableCell>
-                                <TableCell>{product.boughtBy}</TableCell>
-                                <TableCell>
-                                    <Badge variant={
-                                        product.status.toLowerCase() === "cancelled"
-                                            ? "destructive"
-                                            : product.status.toLowerCase() === "pending"
-                                                ? "default"
-                                                : "secondary"
-                                    } className=''>{product.status}</Badge>
-                                </TableCell>
+            <div className="overflow-x-auto">
+                {loading ? (
+                    <div className="flex justify-center items-center py-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                        <span className="ml-2 text-gray-400">Loading referral orders...</span>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="text-center py-10">
+                        <p className="text-gray-400">No referral orders found</p>
+                    </div>
+                ) : (
+                    <Table className="min-w-[800px] sm:min-w-full">
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
+                                <TableHead className="text-gray-400">Name</TableHead>
+                                <TableHead className="text-gray-400">Transaction ID</TableHead>
+                                <TableHead className="text-gray-400">Product ID</TableHead>
+                                <TableHead className="text-gray-400">Quantity</TableHead>
+                                <TableHead className="text-gray-400">Price</TableHead>
+                                <TableHead className="text-gray-400">Commission</TableHead>
+                                <TableHead className="text-gray-400">Bought On</TableHead>
+                                <TableHead className="text-gray-400">Bought By</TableHead>
+                                <TableHead className="text-gray-400">Status</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            )}
+                        </TableHeader>
+                        <TableBody>
+                            {products.map((product) => (
+                                <TableRow key={product.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center">
+                                            <span className="text-white">$</span>
+                                        </div>
+                                        {product.name}
+                                    </TableCell>
+                                    <TableCell>{product.transactionId}</TableCell>
+                                    <TableCell>{product.id}</TableCell>
+                                    <TableCell>{product.quantity}</TableCell>
+                                    <TableCell className="text-[#3B82F6]">{product.price}</TableCell>
+                                    <TableCell className="text-[#4ADE80]">{product.commission}</TableCell>
+                                    <TableCell>{product.boughtOn}</TableCell>
+                                    <TableCell>{product.boughtBy}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            product.status.toLowerCase() === "cancelled"
+                                                ? "destructive"
+                                                : product.status.toLowerCase() === "pending"
+                                                    ? "default"
+                                                    : "secondary"
+                                        } className=''>{product.status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
 
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalOrders}
-                onPageChange={handlePageChange}
-                loading={loading}
-            />
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalOrders}
+                    onPageChange={handlePageChange}
+                    loading={loading}
+                />
+            </div>
         </div>
     )
 }

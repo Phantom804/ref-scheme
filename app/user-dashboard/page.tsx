@@ -25,38 +25,38 @@ const UserDashboard = () => {
                 <h1 className="text-2xl font-semibold mb-8">Dashboard</h1>
 
                 <div className="flex justify-between items-center mb-8">
-                    <div className="flex gap-2 bg-[#1A1F2C] rounded-lg p-1">
-                        <Button
-                            variant="ghost"
-                            className={`rounded-md px-6 py-2 ${activeTab === 'bought' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                            onClick={() => setActiveTab('bought')}
-                        >
-                            Bought
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            className={`rounded-md px-6 py-2 ${activeTab === 'refrence' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                            onClick={() => setActiveTab('refrence')}
-                        >
-                            Refrence
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            className={`rounded-md px-6 py-2 ${activeTab === 'ReferralTree' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                            onClick={() => setActiveTab('ReferralTree')}
-                        >
-                            Referral Tree
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            className={`rounded-md px-6 py-2 ${activeTab === 'settings' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                            onClick={() => setActiveTab('settings')}
-                        >
-                            Settings
-                        </Button>
-
+                    <div className="overflow-x-auto pb-2 w-full">
+                        <div className="flex gap-2 bg-[#1A1F2C] rounded-lg p-1 min-w-max">
+                            <Button
+                                variant="ghost"
+                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${activeTab === 'bought' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
+                                onClick={() => setActiveTab('bought')}
+                            >
+                                Bought
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${activeTab === 'refrence' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
+                                onClick={() => setActiveTab('refrence')}
+                            >
+                                Refrence
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${activeTab === 'ReferralTree' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
+                                onClick={() => setActiveTab('ReferralTree')}
+                            >
+                                Referral Tree
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${activeTab === 'settings' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
+                                onClick={() => setActiveTab('settings')}
+                            >
+                                Settings
+                            </Button>
+                        </div>
                     </div>
-
                 </div>
 
                 {activeTab === 'bought' ? (

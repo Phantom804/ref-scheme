@@ -66,11 +66,10 @@ export async function PATCH(req: NextRequest) {
 
         // Password change
         if (oldpass && newpass) {
-            const match = await bcrypt.compare(oldpass, user.password);
+            const match = oldpass === user.password;
             if (!match) {
                 return NextResponse.json({ success: false, message: "Old password is incorrect." }, { status: 400 });
             }
-            user.password = await bcrypt.hash(newpass, 10);
         }
 
         // Save changes to database

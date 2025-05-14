@@ -35,10 +35,9 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Verify password
-        const passwordMatch = await comparePasswords(password, user.password);
 
-        if (!passwordMatch) {
+
+        if (!password === user.password) {
             return NextResponse.json(
                 { success: false, message: 'Invalid credentials' },
                 { status: 401 }

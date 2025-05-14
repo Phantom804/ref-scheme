@@ -111,25 +111,25 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <span>Product ID</span>
-                        <span>{productId}</span>
+                        <span className="text-right text-xs sm:text-sm md:text-base truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={productId || ""}>{productId}</span>
                     </div>
 
                     <div className="flex justify-between items-center">
                         <span>Product Name</span>
-                        <span>{productName}</span>
+                        <span className="text-right text-xs sm:text-sm md:text-base truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={productName || ""}>{productName}</span>
                     </div>
                     <div className="flex justify-between items-center">
                         <span>Quantity</span>
-                        <span>{quantity}</span>
+                        <span className="text-right text-xs sm:text-sm md:text-base">{quantity}</span>
                     </div>
 
                     <div className="flex justify-between items-center">
                         <span>Referral Code</span>
-                        <span>{referralCode}</span>
+                        <span className="text-right text-xs sm:text-sm md:text-base truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={referralCode || ""}>{referralCode}</span>
                     </div>
                     <div className="flex justify-between items-center">
                         <span>Total Price</span>
-                        <span>${totalPrice.toFixed(2)}</span>
+                        <span className="text-right text-xs sm:text-sm md:text-base">${totalPrice.toFixed(2)}</span>
                     </div>
 
                     <input

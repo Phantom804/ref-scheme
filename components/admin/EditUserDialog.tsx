@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
     _id: string;
@@ -26,6 +27,7 @@ interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ user, isOpen, onClose, onSave }: EditUserDialogProps) {
+    const { isSuperAdmin } = useAuth();
     const [formData, setFormData] = useState<Partial<User>>(
         user || { name: '', email: '', phoneNumber: '', password: '', role: 'user', isBlocked: false }
     );
@@ -116,24 +118,25 @@ export function EditUserDialog({ user, isOpen, onClose, onSave }: EditUserDialog
                             className="bg-gray-800 border-gray-700"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
-                        <Select
-                            value={formData.role}
-                            onValueChange={(value) =>
-                                setFormData({ ...formData, role: value })
-                            }
-                        >
-                            <SelectTrigger className="bg-gray-800 border-gray-700">
-                                <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                                <SelectItem value="superAdmin">Superadmin</SelectItem>
-                                <SelectItem value="user">User</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {isSuperAdmin && (
+                        <div className="space-y-2">
+                            <Label htmlFor="role">Role</Label>
+                            <Select
+                                value={formData.role}
+                                onValueChange={(value) =>
+                                    setFormData({ ...formData, role: value })
+                                }
+                            >
+                                <SelectTrigger className="bg-gray-800 border-gray-700">
+                                    <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-800 border-gray-700">
+                                    <SelectItem value="user">User</SelectItem>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className="flex items-center space-x-2">
                         <Switch
                             id="blocked"

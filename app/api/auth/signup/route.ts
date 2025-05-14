@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
-import { hashPassword } from '@/lib/auth/authHelper';
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,8 +26,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Hash password
-        const hashedPassword = await hashPassword(password);
+
 
         // Create new user
         const user = await User.create({
@@ -36,7 +34,7 @@ export async function POST(req: NextRequest) {
             referredByCode,
             referredCode: phoneNumber,
             phoneNumber,
-            password: hashedPassword,
+            password: password,
             isVerified: true
         });
 

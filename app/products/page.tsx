@@ -12,6 +12,7 @@ import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import { useSearchParams } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 interface Product {
@@ -29,6 +30,12 @@ interface ProductsResponse {
     totalProducts: number;
 }
 
+interface categoryType {
+    _id: string;
+    name: string;
+
+}
+
 // Create a client component that uses useSearchParams
 function ProductsContent() {
     const searchParams = useSearchParams();
@@ -38,11 +45,13 @@ function ProductsContent() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalProducts, setTotalProducts] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<categoryType[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         productName: '',
         minPrice: 0,
-        maxPrice: 1000
+        maxPrice: 1000,
+        category: ''
     });
 
 
@@ -96,6 +105,10 @@ function ProductsContent() {
 
     useEffect(() => {
         fetchProducts();
+        fetch('/api/categories')
+            .then(res => res.json())
+            .then(data => setCategories(data))
+            .catch(err => console.error('Error fetching categories:', err));
     }, [searchTerm]); // Add searchTerm as dependency
 
 
@@ -111,6 +124,7 @@ function ProductsContent() {
     const resetFilters = () => {
         const defaultFilters = {
             productName: '',
+            category: '',
             minPrice: 0,
             maxPrice: 1000
         };
@@ -146,6 +160,24 @@ function ProductsContent() {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80">
                                     <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Category</Label>
+                                            <Select
+                                                value={filters.category}
+                                                onValueChange={(value) => handleFilterChange('category', value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a category" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {categories.map((category) => (
+                                                        <SelectItem key={category._id} value={category.name}>
+                                                            {category.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                         <div className="space-y-2">
                                             <Label>Product Name</Label>
                                             <Input
