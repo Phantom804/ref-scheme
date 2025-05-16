@@ -27,7 +27,6 @@ const NAV_LINKS = [
     { label: "Explore", href: "/" },
     { label: "Products", href: "/products" },
     { label: "Settings", href: "/user-dashboard" },
-    { label: "Help", href: "/help" },
 ];
 
 const Navbar = () => {
@@ -35,6 +34,18 @@ const Navbar = () => {
     const pathname = usePathname();
     const { user, isAuthenticated, signOut } = useAuth();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isTawkReady, setIsTawkReady] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (typeof window !== "undefined" && window.Tawk_API) {
+                setIsTawkReady(true);
+                clearInterval(interval);
+            }
+        }, 500); // check every 500ms
+
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <nav className="w-full flex justify-between items-center py-4 sm:py-6 px-4 sm:px-8">
@@ -69,6 +80,26 @@ const Navbar = () => {
                             </Link>
                         );
                     })}
+
+                    <Button
+                        key="Help"
+                        variant="ghost"
+                        onClick={() => {
+                            if (window.Tawk_API) {
+                                window.Tawk_API.maximize();
+                            }
+                        }}
+                        disabled={!isTawkReady}
+                        className={`
+    text-white rounded-full text-lg font-medium px-5 py-1.5
+    hover:bg-[#110736] hover:text-blue-300
+    transition-colors
+    ${!isTawkReady ? "opacity-50 cursor-not-allowed" : ""}
+  `}
+                    >
+                        Help
+                    </Button>
+
                 </div>
             </div>
 
