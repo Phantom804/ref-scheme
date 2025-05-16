@@ -58,6 +58,14 @@ const Navbar = () => {
         return () => clearInterval(interval);
     }, []);
 
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault() // prevent default link behavior
+        if (isTawkReady && window.Tawk_API) {
+            window.Tawk_API.maximize()
+        }
+    }
+
     return (
         <nav className="w-full flex justify-between items-center py-4 sm:py-6 px-4 sm:px-8">
             {/* Logo */}
@@ -250,22 +258,18 @@ const Navbar = () => {
                                 );
                             })}
                             <SheetClose asChild >
-                                <Link
-                                    key="Help"
-                                    onClick={() => {
-                                        if (window.Tawk_API) {
-                                            window.Tawk_API.maximize();
-                                        }
-                                    }}
-                                    disabled={!isTawkReady}
-                                    className={`
-    text-lg font-medium px-2 py-2 rounded-md
-    hover:bg-[#110736] hover:text-blue-300
-    transition-colors
-    ${!isTawkReady ? "opacity-50 cursor-not-allowed" : ""}
-  `}
-                                >
-                                    Help
+                                <Link href="#" passHref>
+                                    <a
+                                        onClick={handleClick}
+                                        className={`
+          text-lg font-medium px-2 py-2 rounded-md
+          hover:bg-[#110736] hover:text-blue-300
+          transition-colors
+          ${!isTawkReady ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
+        `}
+                                    >
+                                        Help
+                                    </a>
                                 </Link>
 
                             </SheetClose>
