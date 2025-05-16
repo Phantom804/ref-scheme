@@ -29,6 +29,17 @@ const NAV_LINKS = [
     { label: "Settings", href: "/user-dashboard" },
 ];
 
+
+declare global {
+    interface Window {
+        Tawk_API?: {
+            maximize: () => void;
+            // optionally add other methods like .minimize, .toggle if needed
+        };
+    }
+}
+
+
 const Navbar = () => {
     const router = useRouter();
     const pathname = usePathname();
