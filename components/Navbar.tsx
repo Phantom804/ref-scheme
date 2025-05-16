@@ -252,7 +252,6 @@ const Navbar = () => {
                             <SheetClose asChild >
                                 <Link
                                     key="Help"
-                                    variant="ghost"
                                     onClick={() => {
                                         if (window.Tawk_API) {
                                             window.Tawk_API.maximize();
