@@ -250,7 +250,7 @@ const Navbar = () => {
                                 );
                             })}
                             <SheetClose asChild >
-                                <Button
+                                <Link
                                     key="Help"
                                     variant="ghost"
                                     onClick={() => {
@@ -267,7 +267,7 @@ const Navbar = () => {
   `}
                                 >
                                     Help
-                                </Button>
+                                </Link>
 
                             </SheetClose>
                             {/* Mobile Auth Options */}
