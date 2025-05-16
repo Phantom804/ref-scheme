@@ -249,7 +249,27 @@ const Navbar = () => {
                                     </SheetClose>
                                 );
                             })}
+                            <SheetClose asChild >
+                                <Button
+                                    key="Help"
+                                    variant="ghost"
+                                    onClick={() => {
+                                        if (window.Tawk_API) {
+                                            window.Tawk_API.maximize();
+                                        }
+                                    }}
+                                    disabled={!isTawkReady}
+                                    className={`
+    text-lg font-medium px-2 py-2 rounded-md
+    hover:bg-[#110736] hover:text-blue-300
+    transition-colors
+    ${!isTawkReady ? "opacity-50 cursor-not-allowed" : ""}
+  `}
+                                >
+                                    Help
+                                </Button>
 
+                            </SheetClose>
                             {/* Mobile Auth Options */}
                             <div className="pt-6 mt-6 border-t border-[#2d2545]">
                                 {isAuthenticated ? (
