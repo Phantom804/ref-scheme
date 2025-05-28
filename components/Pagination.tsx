@@ -22,7 +22,7 @@ const Pagination: React.FC<PaginationProps> = ({
         !loading && (
 
 
-            <div className="p-4 flex items-center justify-between border-t border-[#2A2F3E]">
+            <div className="p-4 mt-2 flex items-center justify-between border-t border-[#2A2F3E]">
                 <span className="text-sm text-gray-400">
                     Page {currentPage} of {totalPages}
                 </span>

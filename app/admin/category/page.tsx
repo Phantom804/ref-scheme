@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 
 interface Category {
     _id: string;
@@ -25,19 +26,19 @@ export default function CategoriesPage() {
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [formData, setFormData] = useState({ name: '', description: '' });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
 
     const fetchCategories = async () => {
         try {
+            setLoading(true);
             const response = await fetch('/api/admin/category');
             const data = await response.json();
             if (data.categories) {
                 setCategories(data.categories);
             }
         } catch (error) {
-            console.error('Error fetching categories:', error);
-            setError('Failed to fetch categories');
+            toast.error('Failed to fetch categories');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -60,7 +61,6 @@ export default function CategoriesPage() {
         setOpen(false);
         setEditingCategory(null);
         setFormData({ name: '', description: '' });
-        setError('');
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -85,15 +85,12 @@ export default function CategoriesPage() {
                 throw new Error(data.error || 'Something went wrong');
             }
 
-            setSuccess(editingCategory ? 'Category updated successfully' : 'Category created successfully');
+            toast.success(editingCategory ? 'Category updated successfully' : 'Category created successfully');
             fetchCategories();
             handleClose();
 
-            // Clear success message after 3 seconds
-            setTimeout(() => setSuccess(''), 3000);
-
         } catch (error: any) {
-            setError(error.message);
+            toast.error(error.message);
         }
     };
 
@@ -113,14 +110,11 @@ export default function CategoriesPage() {
                 throw new Error(data.error || 'Failed to delete category');
             }
 
-            setSuccess('Category deleted successfully');
+            toast.error('Category deleted successfully');
             fetchCategories();
 
-            // Clear success message after 3 seconds
-            setTimeout(() => setSuccess(''), 3000);
-
         } catch (error: any) {
-            setError(error.message);
+            console.error(error.message);
         }
     };
 
@@ -144,9 +138,6 @@ export default function CategoriesPage() {
             ) : (
 
                 <Card>
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 p-4">
-
-                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
                         {categories.map((category) => (
                             <Card key={category._id} className="bg-gray-900 text-white p-4 flex flex-col justify-between">
@@ -165,8 +156,14 @@ export default function CategoriesPage() {
                             </Card>
                         ))}
                     </div>
+                    {categories.length === 0 && !loading && (
+                        <div className="text-center py-6">
+                            <p className="text-gray-400">No categories added yet.</p>
+                        </div>
+                    )}
                 </Card>
             )}
+
             <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
                 <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white">
                     <DialogHeader>
@@ -176,7 +173,7 @@ export default function CategoriesPage() {
                         <div className="space-y-2">
                             <Input
                                 placeholder="Category Name"
-                                value={formData.name}
+                                value={formData.name || ''}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="bg-gray-800 border-gray-700"
                             />
@@ -184,7 +181,7 @@ export default function CategoriesPage() {
                         <div className="space-y-2">
                             <Input
                                 placeholder="Description"
-                                value={formData.description}
+                                value={formData.description || ''}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 className="bg-gray-800 border-gray-700"
                             />
@@ -194,8 +191,10 @@ export default function CategoriesPage() {
                             <Button type="submit" className="bg-purple-600 hover:bg-purple-700">{editingCategory ? 'Update' : 'Create'}</Button>
                         </div>
                     </form>
+
                 </DialogContent>
             </Dialog>
+
         </div>
     );
 }

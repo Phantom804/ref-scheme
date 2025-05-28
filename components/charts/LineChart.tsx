@@ -52,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameT
                 </p>
                 {payload.map((entry, index) => (
                     <p key={`item-${index}`} style={{ color: entry.color, margin: '0', fontWeight: 'bold' }}>
-                        {entry.name}: ${entry.value}
+                        {entry.name}: PKR{entry.value}
                     </p>
                 ))}
             </div>
@@ -79,6 +79,7 @@ const LineChart = ({ data, datasets }: LineChartProps) => {
                     dataKey="name"
                     tick={{ fill: '#9CA3AF' }}
                     axisLine={{ stroke: '#4B5563' }}
+                    
                 />
                 <YAxis
                     tick={{ fill: '#9CA3AF' }}

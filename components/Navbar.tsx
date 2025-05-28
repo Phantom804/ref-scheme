@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import {
     Menu,
     User
 } from "lucide-react";
+
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,22 +23,14 @@ import {
     SheetClose
 } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from 'sonner';
 
 const NAV_LINKS = [
     { label: "Explore", href: "/" },
     { label: "Products", href: "/products" },
-    { label: "Settings", href: "/user-dashboard" },
+    { label: "Dashboard", href: "/user-dashboard" },
 ];
 
-
-declare global {
-    interface Window {
-        Tawk_API?: {
-            maximize: () => void;
-            // optionally add other methods like .minimize, .toggle if needed
-        };
-    }
-}
 
 
 const Navbar = () => {
@@ -45,30 +38,22 @@ const Navbar = () => {
     const pathname = usePathname();
     const { user, isAuthenticated, signOut } = useAuth();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [isTawkReady, setIsTawkReady] = useState(false);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (typeof window !== "undefined" && window.Tawk_API) {
-                setIsTawkReady(true);
-                clearInterval(interval);
-            }
-        }, 500); // check every 500ms
-
-        return () => clearInterval(interval);
-    }, []);
 
 
     const handleClick = (e: React.MouseEvent) => {
-        e.preventDefault() // prevent default link behavior
-        if (isTawkReady && window.Tawk_API) {
-            window.Tawk_API.maximize()
-        }
+        e.preventDefault(); // prevent default link behavior
+
+        const chatButton = document.getElementById('toggleChatButton');
+        if (chatButton) {
+            chatButton.click();
+            toast.message('Chat With Us');
+
+        };
     }
 
     return (
         <nav className="w-full flex justify-between items-center py-4 sm:py-6 px-4 sm:px-8">
-            {/* Logo */}
             <div
                 className="text-white text-2xl sm:text-3xl font-extrabold tracking-wide select-none cursor-pointer"
                 onClick={() => router.push("/")}
@@ -76,7 +61,7 @@ const Navbar = () => {
                 LOGO
             </div>
 
-            {/* Desktop Navigation Links */}
+
             <div className="hidden md:flex items-center">
                 <div className="flex space-x-2 bg-[#19112A] border border-[#2d2545] rounded-full px-3 py-1">
                     {NAV_LINKS.map((link) => {
@@ -103,34 +88,25 @@ const Navbar = () => {
                     <Button
                         key="Help"
                         variant="ghost"
-                        onClick={() => {
-                            if (window.Tawk_API) {
-                                window.Tawk_API.maximize();
-                            }
-                        }}
-                        disabled={!isTawkReady}
+                        onClick={handleClick}
+
                         className={`
     text-white rounded-full text-lg font-medium px-5 py-1.5
     hover:bg-[#110736] hover:text-blue-300
-    transition-colors
-    ${!isTawkReady ? "opacity-50 cursor-not-allowed" : ""}
-  `}
+    transition-colors`}
                     >
                         Help
                     </Button>
-
                 </div>
             </div>
 
-            {/* Actions: Search + User/Auth */}
             <div className="flex items-center gap-2 sm:gap-3">
-                {/* Search Button with Popover */}
                 <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
                     <PopoverTrigger asChild>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="rounded-full p-2 text-[#ffffff] bg-white/10 border border-[#EEE]/[0.18] hover:bg-[#e8e9fa]/40"
+                            className="rounded-full p-2 text-[#ffffff] bg-white/10 border border-[#EEE]/[0.18] hover:text-[#ffffff] hover:bg-[#e8e9fa]/40"
                         >
                             <Search size={20} />
                         </Button>
@@ -159,13 +135,13 @@ const Navbar = () => {
                     </PopoverContent>
                 </Popover>
 
-                {/* Auth Section - Desktop */}
+
                 <div className="hidden sm:flex items-center bg-white/10 border border-[#EEE]/[0.18] rounded-full px-3 py-1 space-x-3 shadow-sm backdrop-blur-[1.5px]">
-                    {/* Auth or User */}
+
                     {isAuthenticated ? (
                         <>
                             <Avatar className="h-8 w-8">
-                                <AvatarImage src="https://github.com/shadcn.png" />
+                                <AvatarImage src="/profilepic.jpg" />
                                 <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                             </Avatar>
                             <Link href="/user-dashboard" >
@@ -188,7 +164,7 @@ const Navbar = () => {
                             >
                                 Sign In
                             </Button>
-                            {/* Divider, optional */}
+
                             <div className="w-[1px] h-8 bg-[#E8E9FA]/30 mx-2 hidden md:block"></div>
                             <Button
                                 onClick={() => router.push("/signup")}
@@ -200,11 +176,11 @@ const Navbar = () => {
                     )}
                 </div>
 
-                {/* Auth Section - Mobile */}
+
                 <div className="sm:hidden">
                     {isAuthenticated ? (
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src="https://github.com/shadcn.png" />
+                            <AvatarImage src="/profilepic.jpg" />
                             <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                         </Avatar>
                     ) : (
@@ -219,7 +195,7 @@ const Navbar = () => {
                     )}
                 </div>
 
-                {/* Mobile Menu */}
+
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button
@@ -257,23 +233,22 @@ const Navbar = () => {
                                     </SheetClose>
                                 );
                             })}
+
                             <SheetClose asChild >
-                                <Link href="#" passHref>
-                                    <a
-                                        onClick={handleClick}
-                                        className={`
+
+                                <a
+                                    onClick={handleClick}
+                                    className={`
           text-lg font-medium px-2 py-2 rounded-md
           hover:bg-[#110736] hover:text-blue-300
-          transition-colors
-          ${!isTawkReady ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
-        `}
-                                    >
-                                        Help
-                                    </a>
-                                </Link>
+          transition-colors`}
+                                >
+                                    Help
+                                </a>
+
 
                             </SheetClose>
-                            {/* Mobile Auth Options */}
+
                             <div className="pt-6 mt-6 border-t border-[#2d2545]">
                                 {isAuthenticated ? (
                                     <div className="space-y-4">
@@ -282,7 +257,7 @@ const Navbar = () => {
                                                 <AvatarImage src="https://github.com/shadcn.png" />
                                                 <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
                                             </Avatar>
-                                            <span className="text-[#D6DDFC] font-medium">{user?.name || "Asim"}</span>
+                                            <span className="text-[#ffffff] font-medium">{user?.name || "Asim"}</span>
                                         </div>
                                         <SheetClose asChild>
                                             <Link

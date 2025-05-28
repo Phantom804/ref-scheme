@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import { generateToken } from '@/lib/auth/authHelper';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { User } from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/mongoose';
@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { id, name, email, phoneNumber, oldpass, newpass } = body;
+        const { id, name, email, phoneNumber, oldpin, newpin } = body;
         if (!id) {
             return NextResponse.json({ success: false, message: "User ID required." }, { status: 400 });
         }
@@ -64,22 +64,55 @@ export async function PATCH(req: NextRequest) {
         if (email) user.email = email;
         if (phoneNumber) user.phoneNumber = phoneNumber;
 
-        // Password change
-        if (oldpass && newpass) {
-            const match = oldpass === user.password;
-            if (!match) {
+        if (oldpin && newpin) {
+            if (oldpin !== user.password) {
                 return NextResponse.json({ success: false, message: "Old password is incorrect." }, { status: 400 });
             }
+
+            user.password = newpin;
         }
 
-        // Save changes to database
+
         await user.save();
 
-        // Return user without password
-        const userWithoutPassword = user.toObject();
-        delete userWithoutPassword.password;
 
-        return NextResponse.json({ success: true, user: userWithoutPassword });
+        const jwtpayload = {
+            id: user._id,
+            name: user.name,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            referralCode: user.referralCode,
+            role: user.role
+        }
+
+
+        const jwtToken = generateToken(jwtpayload);
+
+
+
+        const response = NextResponse.json({
+            success: true, user: {
+                id: user._id,
+                name: user.name,
+                phoneNumber: user.phoneNumber,
+                referralCode: user.referralCode || user.phoneNumber,
+                email: user.email,
+                role: user.role
+            }
+        })
+
+
+        response.cookies.set({
+            name: 'auth_token',
+            value: jwtToken,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24 * 7,
+            path: '/'
+        });
+
+        return response
     } catch (error) {
         return NextResponse.json({ success: false, message: "Server error." }, { status: 500 });
     }

@@ -49,8 +49,8 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                 return;
             }
 
-            // Validate file type (only JPEG and PNG)
-            if (!['image/jpeg', 'image/png'].includes(file.type)) {
+
+            if (!['image/jpeg', 'image/png', 'jpg'].includes(file.type)) {
                 setFileError("Only JPEG and PNG formats are supported");
                 return;
             }
@@ -122,20 +122,21 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                         <span>Quantity</span>
                         <span className="text-right text-xs sm:text-sm md:text-base">{quantity}</span>
                     </div>
-
-                    <div className="flex justify-between items-center">
-                        <span>Referral Code</span>
-                        <span className="text-right text-xs sm:text-sm md:text-base truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={referralCode || ""}>{referralCode}</span>
-                    </div>
+                    {referralCode && (
+                        <div className="flex justify-between items-center">
+                            <span>Referral Code</span>
+                            <span className="text-right text-xs sm:text-sm md:text-base truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={referralCode}>{referralCode}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between items-center">
                         <span>Total Price</span>
-                        <span className="text-right text-xs sm:text-sm md:text-base">${totalPrice.toFixed(2)}</span>
+                        <span className="text-right text-xs sm:text-sm md:text-base">PKR {totalPrice}</span>
                     </div>
 
                     <input
                         type="file"
                         hidden
-                        accept="image/png, image/jpeg"
+                        accept="image/png, image/jpeg, image/jpg"
                         ref={fileInputRef}
                         onChange={handleFileInputChange}
                     />
@@ -166,7 +167,7 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                                     <ImageIcon className="w-6 h-6 text-gray-400" />
                                     <span>Drag and drop or click to upload receipt image</span>
                                 </div>
-                                <div className="text-sm text-gray-400">JPEG, PNG formats supported (max 1MB)</div>
+                                <div className="text-sm text-gray-400">JPEG/JPG, PNG formats supported (max 1MB)</div>
                             </div>
                         )}
                         {fileError && (

@@ -40,7 +40,6 @@ export async function connectToDatabase() {
     return cached.conn;
 }
 
-// Call connectToDatabase immediately to establish the connection
 connectToDatabase().catch(console.error);
 
 export { mongoose }; 

@@ -6,21 +6,25 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, MoreHorizontal } from "lucide-react";
+import { Download } from "lucide-react";
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import Pagination from '@/components/Pagination';
 
 interface Order {
     id: string;
-    name: string;
+    productName?: string;
+    productId: string;
     transactionId: string;
     quantity: number;
-    productCode: string;
-    referralCode: string;
+    productCode?: string;
+    referralCode?: string;
+    commission?: string;
+    buyer: string,
     price: string;
     boughtOn: string;
     status: "Pending" | "Completed" | "Cancelled";
@@ -46,9 +50,10 @@ const Orders: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'direct' | 'reference' | ''>('direct');
     const [filters, setFilters] = useState({
         referralCode: '',
-        productName: '',
         minPrice: 0,
-        maxPrice: 1000
+        maxPrice: 1000,
+        showCancelledOrders: false,
+        showCompletedOrders: false // Add new filter state
     });
     const ordersPerPage = 10;
 
@@ -74,10 +79,6 @@ const Orders: React.FC = () => {
                 queryString += `&referralCode=${encodeURIComponent(currentFilters.referralCode)}`;
             }
 
-            if (currentFilters.productName) {
-                queryString += `&productName=${encodeURIComponent(currentFilters.productName)}`;
-            }
-
             if (currentFilters.minPrice > 0) {
                 queryString += `&minPrice=${currentFilters.minPrice}`;
             }
@@ -85,6 +86,11 @@ const Orders: React.FC = () => {
             if (currentFilters.maxPrice < 1000) {
                 queryString += `&maxPrice=${currentFilters.maxPrice}`;
             }
+
+            // Add show cancelled orders filter
+            queryString += `&showCancelledOrders=${currentFilters.showCancelledOrders}`;
+            // Add show completed orders filter
+            queryString += `&showCompletedOrders=${currentFilters.showCompletedOrders}`;
 
             const response = await fetch(queryString);
 
@@ -104,7 +110,7 @@ const Orders: React.FC = () => {
         }
     };
 
-    // Handle status change
+
     const handleStatusChange = async (status: Order['status'], orderId: string) => {
         try {
             const response = await fetch('/api/admin/orders', {
@@ -145,17 +151,14 @@ const Orders: React.FC = () => {
     };
 
 
-    // Handle search input change with debounce
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchTerm(value);
 
-        // Clear existing timeout
         if (searchTimeout) {
             clearTimeout(searchTimeout);
         }
 
-        // Set new timeout for debounce
         const timeout = setTimeout(() => {
             fetchOrders(1, value, filters);
             setCurrentPage(1);
@@ -164,45 +167,95 @@ const Orders: React.FC = () => {
         setSearchTimeout(timeout);
     };
 
-    // Handle filter changes
-    const handleFilterChange = (name: string, value: string | number | number[]) => {
+    const handleFilterChange = (name: string, value: string | number | number[] | boolean) => {
         const newFilters = { ...filters, [name]: value };
         setFilters(newFilters);
     };
 
-    // Apply filters
     const applyFilters = () => {
         fetchOrders(1, searchTerm, filters);
         setCurrentPage(1);
     };
 
-    // Reset filters
     const resetFilters = () => {
         const defaultFilters = {
             referralCode: '',
-            productName: '',
             minPrice: 0,
-            maxPrice: 1000
+            maxPrice: 1000,
+            showCancelledOrders: false,
+            showCompletedOrders: false // Reset new filter state
         };
         setFilters(defaultFilters);
         fetchOrders(1, searchTerm, defaultFilters);
         setCurrentPage(1);
     };
 
-    // Handle pagination
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
         fetchOrders(page, searchTerm, filters);
     };
 
-    // Download receipt
-    const handleDownloadReceipt = (receiptUrl: string) => {
+    const handleDownloadReceipt = async (receiptUrl: string) => {
         if (!receiptUrl) {
             toast.error('Receipt not available');
             return;
         }
 
-        window.open(receiptUrl, '_blank');
+        try {
+            toast.loading('Preparing download...');
+
+            // Fetch the image first to get it as a blob
+            const response = await fetch(receiptUrl, {
+                mode: 'cors', // Ensure CORS is enabled
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+            }
+
+            // Convert the response to a blob
+            const blob = await response.blob();
+
+            // Create a local object URL from the blob
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Determine file extension
+            let fileExtension = '.png';
+            if (receiptUrl.includes('.')) {
+                const urlParts = receiptUrl.split('.');
+                const extension = urlParts[urlParts.length - 1].toLowerCase();
+
+                // Check for valid image extensions
+                if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
+                    fileExtension = `.${extension}`;
+                }
+            }
+
+            // Create filename
+            const filename = `receipt_${new Date().getTime()}${fileExtension}`;
+
+            // Create download link
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            link.style.display = 'none';
+
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+                toast.dismiss();
+                toast.success('Receipt downloaded successfully');
+            }, 100);
+        } catch (error) {
+            toast.dismiss();
+            console.error('Error downloading receipt:', error);
+            toast.error('Failed to download receipt. Please try again.');
+        }
     };
 
     // Handle tab change
@@ -230,7 +283,7 @@ const Orders: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-white">Orders</h1>
                     <p className="text-gray-400">Manage orders and track transactions</p>
-                    <div className="flex justify-between items-center mb-8">
+                    <div className="flex justify-between items-center mt-1 mb-8">
                         <div className="flex gap-2 bg-[#1A1F2C] rounded-lg p-1">
                             <Button
                                 variant="ghost"
@@ -275,7 +328,7 @@ const Orders: React.FC = () => {
                             >
                                 <Filter size={16} className="mr-2" />
                                 Filters
-                                {(filters.referralCode || filters.productName || filters.minPrice > 0 || filters.maxPrice < 1000) && (
+                                {(filters.referralCode || filters.minPrice > 0 || filters.maxPrice < 1000 || filters.showCancelledOrders) && (
                                     <span className="ml-2 w-2 h-2 bg-purple-500 rounded-full"></span>
                                 )}
                             </Button>
@@ -306,14 +359,26 @@ const Orders: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="productName" className="text-sm text-gray-400">Product Name</Label>
-                                    <Input
-                                        id="productName"
-                                        value={filters.productName}
-                                        onChange={(e) => handleFilterChange('productName', e.target.value)}
-                                        placeholder="Filter by product name"
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                    />
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="showCancelledOrders" className="text-sm text-gray-400">Show Cancelled Orders</Label>
+                                        <Switch
+                                            id="showCancelledOrders"
+                                            checked={filters.showCancelledOrders}
+                                            onCheckedChange={(checked) => handleFilterChange('showCancelledOrders', checked)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Add Show Completed Orders Filter */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="showCompletedOrders" className="text-sm text-gray-400">Show Completed Orders</Label>
+                                        <Switch
+                                            id="showCompletedOrders"
+                                            checked={filters.showCompletedOrders}
+                                            onCheckedChange={(checked) => handleFilterChange('showCompletedOrders', checked)}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -366,11 +431,17 @@ const Orders: React.FC = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
-                                    <TableHead className="text-gray-400">Name</TableHead>
+                                    <TableHead className="text-gray-400">Buyer</TableHead>
                                     <TableHead className="text-gray-400">Transaction ID</TableHead>
-                                    <TableHead className="text-gray-400">Product Code</TableHead>
+                                    <TableHead className="text-gray-400">Product ID</TableHead>
                                     <TableHead className="text-gray-400">Quantity</TableHead>
-                                    <TableHead className="text-gray-400">Referral Code</TableHead>
+                                    {activeTab === 'reference' && (
+                                        <TableHead className="text-gray-400">Referral Code</TableHead>
+                                    )}
+                                    {activeTab === 'reference' && (
+                                        <TableHead className="text-gray-400">Commission</TableHead>
+                                    )}
+
                                     <TableHead className="text-gray-400">Price</TableHead>
                                     <TableHead className="text-gray-400">Bought On</TableHead>
                                     <TableHead className="text-gray-400">Status</TableHead>
@@ -381,16 +452,19 @@ const Orders: React.FC = () => {
                             <TableBody>
                                 {orders.map((order) => (
                                     <TableRow key={order.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
-                                        <TableCell className="font-medium flex items-center gap-2 text-white">
-                                            <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center">
-                                                <span className="text-white">$</span>
-                                            </div>
-                                            {order.name}
+                                        <TableCell className="text-white">
+                                            {order.buyer}
                                         </TableCell>
                                         <TableCell className="text-white">{order.transactionId}</TableCell>
-                                        <TableCell className="text-white">{order.productCode}</TableCell>
+                                        <TableCell className="text-white">{order.productId}</TableCell>
                                         <TableCell className="text-white">{order.quantity}</TableCell>
-                                        <TableCell className="text-white">{order.referralCode}</TableCell>
+                                        {activeTab === 'reference' && (
+                                            <TableCell className="text-white">{order.referralCode}</TableCell>
+                                        )}
+                                        {activeTab === 'reference' && (
+                                            <TableCell className="text-white">{order.commission}</TableCell>
+                                        )}
+
                                         <TableCell className="text-[#3B82F6]">{order.price}</TableCell>
                                         <TableCell className="text-white">{order.boughtOn}</TableCell>
                                         <TableCell>
@@ -418,11 +492,7 @@ const Orders: React.FC = () => {
                                                 Download
                                             </Button>
                                         </TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                                            </Button>
-                                        </TableCell>
+
                                     </TableRow>
                                 ))}
                             </TableBody>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
-import { comparePasswords, generateToken } from '@/lib/auth/authHelper';
+import { generateToken } from '@/lib/auth/authHelper';
 
 export async function POST(req: NextRequest) {
     try {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         }
 
         const jwtpayload = {
-            id: user.id,
+            id: user._id,
             name: user.name,
             phoneNumber: user.phoneNumber,
             email: user.email,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Loader2, MoreVertical, History } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, Loader2, MoreVertical, History } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Pagination from '@/components/Pagination';
@@ -10,9 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import AddProductDialog from '@/components/AddProductDialog';
+import AddProductDialog from '@/components/admin/AddProductDialog';
 import PriceHistoryDialog from '@/components/admin/PriceHistoryDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Product {
     id: string;
@@ -42,24 +43,21 @@ const AllProducts: React.FC = () => {
     const [isPriceHistoryDialogOpen, setIsPriceHistoryDialogOpen] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<string | undefined>(undefined);
     const [filters, setFilters] = useState({
-        productName: '',
         minPrice: 0,
-        maxPrice: 1000
+        maxPrice: 1000,
+        category: ''
     });
+    const [categories, setCategories] = useState<{ _id: string, name: string }[]>([]);
     const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
     const fetchProducts = async (page = currentPage, search = searchTerm, currentFilters = filters) => {
         try {
             setLoading(true);
 
-            let queryString = `/api/admin/all-products?page=${page}&limit=10`;
+            let queryString = `/api/admin/product?page=${page}&limit=10`;
 
             if (search) {
                 queryString += `&search=${encodeURIComponent(search)}`;
-            }
-
-            if (currentFilters.productName) {
-                queryString += `&productName=${encodeURIComponent(currentFilters.productName)}`;
             }
 
             if (currentFilters.minPrice > 0) {
@@ -68,6 +66,10 @@ const AllProducts: React.FC = () => {
 
             if (currentFilters.maxPrice < 1000) {
                 queryString += `&maxPrice=${currentFilters.maxPrice}`;
+            }
+
+            if (currentFilters.category) {
+                queryString += `&category=${encodeURIComponent(currentFilters.category)}`;
             }
 
             const response = await fetch(queryString);
@@ -93,7 +95,22 @@ const AllProducts: React.FC = () => {
 
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
     }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch('/api/admin/category');
+            if (!response.ok) {
+                throw new Error('Failed to fetch categories');
+            }
+            const data = await response.json();
+            setCategories(data.categories || []);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            toast.error('Failed to load categories');
+        }
+    };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -122,7 +139,7 @@ const AllProducts: React.FC = () => {
 
     const resetFilters = () => {
         const defaultFilters = {
-            productName: '',
+            category: '',
             minPrice: 0,
             maxPrice: 1000
         };
@@ -179,12 +196,23 @@ const AllProducts: React.FC = () => {
                         <PopoverContent className="w-80">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Product Name</Label>
-                                    <Input
-                                        placeholder="Filter by product name"
-                                        value={filters.productName}
-                                        onChange={(e) => handleFilterChange('productName', e.target.value)}
-                                    />
+                                    <Label>Category</Label>
+                                    <Select
+                                        value={filters.category}
+                                        onValueChange={(value) => handleFilterChange('category', value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Categories</SelectItem>
+                                            {categories.map((category) => (
+                                                <SelectItem key={category._id} value={category.name}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Price Range</Label>
@@ -240,7 +268,7 @@ const AllProducts: React.FC = () => {
                                             {product.name}
                                         </td>
                                         <td className="px-6 py-4">{product.category}</td>
-                                        <td className="px-6 py-4">${product.price.toFixed(2)}</td>
+                                        <td className="px-6 py-4">PKR {product.price}</td>
 
 
                                         <td className="px-6 py-4 text-right space-x-2">
@@ -270,6 +298,31 @@ const AllProducts: React.FC = () => {
                                                     >
                                                         <History className="mr-2 h-4 w-4" />
                                                         Price History
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        className="text-red-600 focus:bg-red-50"
+                                                        onClick={async () => {
+                                                            if (window.confirm('Are you sure you want to delete this product?')) {
+                                                                try {
+                                                                    const response = await fetch(`/api/admin/product/byid?productId=${product.id}`, {
+                                                                        method: 'DELETE',
+                                                                    });
+
+                                                                    if (!response.ok) {
+                                                                        throw new Error('Failed to delete product');
+                                                                    }
+
+                                                                    await fetchProducts();
+                                                                    toast.success('Product deleted successfully');
+                                                                } catch (error) {
+                                                                    console.error('Error deleting product:', error);
+                                                                    toast.error('Failed to delete product');
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>

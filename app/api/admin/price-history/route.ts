@@ -2,7 +2,7 @@ import { connectToDatabase } from '@/lib/mongoose';
 import { NextRequest, NextResponse } from 'next/server';
 import PriceHistory from '@/lib/models/PriceHistory';
 
-// Create a new price history entry
+
 export async function POST(req: NextRequest) {
     await connectToDatabase();
     const { productId, price, date } = await req.json();

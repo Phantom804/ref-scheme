@@ -31,7 +31,7 @@ const OrderSchema = new Schema<IOrder>(
         buyer: { type: String },
         commission: { type: String },
         quantity: { type: Number, required: true },
-        referralCode: { type: String, default: '-' },
+        referralCode: { type: String },
         price: { type: Number, required: true },
         status: {
             type: String,
@@ -45,20 +45,6 @@ const OrderSchema = new Schema<IOrder>(
     }
 );
 
-// Virtual for id
-OrderSchema.virtual('id').get(function (this: OrderDocument) {
-    return this._id.toString();
-});
-
-// Ensure virtual fields are serialized
-OrderSchema.set('toJSON', {
-    virtuals: true,
-    transform: (doc, ret) => {
-        delete ret._id;
-        delete ret.__v;
-        return ret;
-    },
-});
 
 // Use existing model or create a new one
 export const Order = models.Order || model<IOrder>('Order', OrderSchema);

@@ -48,7 +48,6 @@ function ProductsContent() {
     const [categories, setCategories] = useState<categoryType[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
-        productName: '',
         minPrice: 0,
         maxPrice: 1000,
         category: ''
@@ -73,9 +72,7 @@ function ProductsContent() {
                 queryString += `&search=${search}`;
             }
 
-            if (currentFilters.productName) {
-                queryString += `&productName=${encodeURIComponent(currentFilters.productName)}`;
-            }
+
 
             if (currentFilters.minPrice > 0) {
                 queryString += `&minPrice=${currentFilters.minPrice}`;
@@ -123,7 +120,6 @@ function ProductsContent() {
 
     const resetFilters = () => {
         const defaultFilters = {
-            productName: '',
             category: '',
             minPrice: 0,
             maxPrice: 1000
@@ -147,7 +143,7 @@ function ProductsContent() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex-1">
                             <h2 className="text-2xl font-bold text-white mb-2">Our Products</h2>
-                            {/* Remove the search input box */}
+
                         </div>
                         <div className="flex gap-2 items-center">
                             <Popover>
@@ -166,10 +162,10 @@ function ProductsContent() {
                                                 value={filters.category}
                                                 onValueChange={(value) => handleFilterChange('category', value)}
                                             >
-                                                <SelectTrigger>
+                                                <SelectTrigger className='border-purple-600'>
                                                     <SelectValue placeholder="Select a category" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className='border-purple-600'>
                                                     {categories.map((category) => (
                                                         <SelectItem key={category._id} value={category.name}>
                                                             {category.name}
@@ -177,14 +173,6 @@ function ProductsContent() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Product Name</Label>
-                                            <Input
-                                                placeholder="Filter by product name"
-                                                value={filters.productName}
-                                                onChange={(e) => handleFilterChange('productName', e.target.value)}
-                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Price Range</Label>
@@ -220,14 +208,15 @@ function ProductsContent() {
                         </div>
                     ) : (
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4  gap-6">
                             {products.map((product) => (
                                 <ProductCard
                                     key={product.id}
                                     id={product.id}
                                     name={product.name}
                                     price={product.price}
-                                    image={product.imageUrl || '/placeholder.png'}
+                                    image={product.imageUrl}
+                                    category={product.category}
                                 />
                             ))}
                         </div>

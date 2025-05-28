@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +12,11 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface Product {
     id: string;
-    name: string;
+    productName: string;
     transactionId: string;
     quantity: number;
+    productReferralLimit: number,
+    referralUsageCount: number;
     referralCode: string;
     price: string;
     boughtOn: string;
@@ -31,7 +32,7 @@ interface OrdersResponse {
 
 function BoughtProducts() {
     const { user } = useAuth();
-    const [userID, setUserID] = useState(user?.id);
+    const [userData, setuserData] = useState(user);
     const [products, setProducts] = useState<Product[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -41,18 +42,20 @@ function BoughtProducts() {
 
     useEffect(() => {
         if (user) {
-            setUserID(user.id);
+            setuserData(user);
         }
     }, [user]);
 
 
     // Fetch user's orders
     const fetchOrders = async (page = currentPage) => {
+        if (!userData) {
+            return
+        }
         try {
             setLoading(true);
 
-
-            const response = await fetch(`/api/orders?page=${page}&limit=10&userId=${userID}&orderType=bought`);
+            const response = await fetch(`/api/orders?page=${page}&limit=10&userId=${user?.id}&referralCode=${user?.referralCode}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch orders');
@@ -97,9 +100,9 @@ function BoughtProducts() {
                     <Table className="min-w-[800px] sm:min-w-full">
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
-                                <TableHead className="text-gray-400">Name</TableHead>
+                                <TableHead className="text-gray-400">Product</TableHead>
                                 <TableHead className="text-gray-400">Transaction ID</TableHead>
-                                <TableHead className="text-gray-400">Product ID</TableHead>
+                                <TableHead className="text-gray-400">Referral Limit</TableHead>
                                 <TableHead className="text-gray-400">Quantity</TableHead>
                                 <TableHead className="text-gray-400">Referral Code</TableHead>
                                 <TableHead className="text-gray-400">Price</TableHead>
@@ -110,14 +113,12 @@ function BoughtProducts() {
                         <TableBody>
                             {products.map((product) => (
                                 <TableRow key={product.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center">
-                                            <span className="text-white">$</span>
-                                        </div>
-                                        {product.name}
+                                    <TableCell>
+
+                                        {product.productName}
                                     </TableCell>
                                     <TableCell>{product.transactionId}</TableCell>
-                                    <TableCell>{product.id}</TableCell>
+                                    <TableCell>{product.referralUsageCount}/{product.productReferralLimit}</TableCell>
                                     <TableCell>{product.quantity}</TableCell>
                                     <TableCell>{product.referralCode}</TableCell>
                                     <TableCell className="text-[#3B82F6]">{product.price}</TableCell>

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 import Pagination from '@/components/Pagination';
@@ -13,8 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface ReferralProduct {
     id: string;
-    name: string;
-    transactionId: string;
+    productName: string;
     quantity: number;
     price: string;
     commission: string;
@@ -48,11 +46,13 @@ export default function RefrenceProducts() {
     const ReferralCode = user?.referralCode;
     // Fetch orders made with user's referral code
     const fetchReferralOrders = async (page = currentPage) => {
+        if (!userID) {
+            return
+        }
         try {
             setLoading(true);
 
-
-            const response = await fetch(`/api/orders?page=${page}&limit=10&userId=${userID}&referralCode=${ReferralCode}&orderType=reference`);
+            const response = await fetch(`/api/orders/reference?page=${page}&limit=10&userId=${userID}&referralCode=${ReferralCode}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch referral orders');
@@ -62,6 +62,7 @@ export default function RefrenceProducts() {
             setProducts(data.orders);
             setTotalPages(data.totalPages);
             setTotalOrders(data.totalOrders);
+
         } catch (error) {
             console.error('Error fetching referral orders:', error);
             toast.error('Failed to load referral orders. Please try again.');
@@ -83,6 +84,8 @@ export default function RefrenceProducts() {
 
     return (
         <div className="bg-[#1A1F2C] rounded-lg overflow-hidden">
+
+
             <div className="overflow-x-auto">
                 {loading ? (
                     <div className="flex justify-center items-center py-10">
@@ -97,9 +100,7 @@ export default function RefrenceProducts() {
                     <Table className="min-w-[800px] sm:min-w-full">
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
-                                <TableHead className="text-gray-400">Name</TableHead>
-                                <TableHead className="text-gray-400">Transaction ID</TableHead>
-                                <TableHead className="text-gray-400">Product ID</TableHead>
+                                <TableHead className="text-gray-400">Product</TableHead>
                                 <TableHead className="text-gray-400">Quantity</TableHead>
                                 <TableHead className="text-gray-400">Price</TableHead>
                                 <TableHead className="text-gray-400">Commission</TableHead>
@@ -111,14 +112,11 @@ export default function RefrenceProducts() {
                         <TableBody>
                             {products.map((product) => (
                                 <TableRow key={product.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center">
-                                            <span className="text-white">$</span>
-                                        </div>
-                                        {product.name}
+                                    <TableCell >
+
+                                        {product.productName}
                                     </TableCell>
-                                    <TableCell>{product.transactionId}</TableCell>
-                                    <TableCell>{product.id}</TableCell>
+
                                     <TableCell>{product.quantity}</TableCell>
                                     <TableCell className="text-[#3B82F6]">{product.price}</TableCell>
                                     <TableCell className="text-[#4ADE80]">{product.commission}</TableCell>

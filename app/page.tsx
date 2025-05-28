@@ -13,7 +13,7 @@ export default function Home() {
       <Navbar />
       <main className='px-4 sm:px-6'>
         <Hero />
-        <ProductsSection TopHeading='Suggested Products' viewAll={true} />
+        <ProductsSection TopHeading='Our Products' viewAll={true} />
       </main>
     </>
   );

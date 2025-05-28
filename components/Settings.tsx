@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useRouter } from 'next/navigation';
 
 
 
@@ -14,17 +15,25 @@ import { toast } from "sonner";
 const Settings = () => {
     const { user, updateUserInfo } = useAuth();
     const [userID, setUserID] = useState(user?.id || '');
+    const [initialValues, setInitialValues] = useState({ name: user?.name || '', email: user?.email || '', phoneNumber: user?.phoneNumber || '' });
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
+    const [isChanged, setIsChanged] = useState(false);
     const [currentPin, setCurrentPin] = useState('');
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [showCurrentPin, setShowCurrentPin] = useState(false);
     const [showNewPin, setShowNewPin] = useState(false);
     const [showConfirmPin, setShowConfirmPin] = useState(false);
+    const router = useRouter();
 
     // Update state when user data changes
+    useEffect(() => {
+        const hasChanged = name !== initialValues.name || email !== initialValues.email || phoneNumber !== initialValues.phoneNumber;
+        setIsChanged(hasChanged);
+    }, [name, email, phoneNumber, initialValues]);
+
     useEffect(() => {
         if (user) {
             setUserID(user.id || '');
@@ -34,24 +43,32 @@ const Settings = () => {
         }
     }, [user]);
 
-    console.log("user ID", userID);
+    const sanitizeInput = (input: string) => {
+        return input.trim()
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    };
+    const sanitizedName = name ? sanitizeInput(name) : "";
+    const sanitizedEmail = email ? sanitizeInput(email) : "";
+    const sanitizedPhoneNumber = phoneNumber ? sanitizeInput(phoneNumber) : "";
+
     const handleUpdate = async () => {
-        if (!user?.id) return;
+        if (!userID) return;
         const result = await updateUserInfo({
-            id: user.id,
-            name,
-            email,
-            phoneNumber
+            id: userID,
+            name: sanitizedName,
+            email: sanitizedEmail,
+            phoneNumber: sanitizedPhoneNumber
         });
         if (result.success) {
-            toast.success('User information updated successfully');
+            toast.success('updated successfully.');
         } else {
-            toast.error(result.message || 'Failed to update user information');
+            toast.error(result.message || 'Failed to update profile info');
         }
     };
 
     const handlePinUpdate = async () => {
-        if (!user?.id) return;
+        if (!userID) return;
         if (!currentPin || !newPin || !confirmPin) {
             toast.error('Please fill in all PIN fields');
             return;
@@ -64,10 +81,14 @@ const Settings = () => {
             toast.error('PIN must be at least 4 digits');
             return;
         }
+
+        const sanitizedCurrentPin = currentPin.trim();
+        const sanitizedNewPin = newPin.trim();
+
         const result = await updateUserInfo({
-            id: user.id,
-            oldpin: currentPin,
-            newpin: newPin
+            id: userID,
+            oldpin: sanitizedCurrentPin,
+            newpin: sanitizedNewPin
         });
         if (result.success) {
             toast.success('PIN updated successfully');
@@ -80,14 +101,14 @@ const Settings = () => {
     };
 
     const handleForgetPin = () => {
-        toast.message("Chat With Admin By chatbox If You Forgate Old Pin")
+        toast.message("Chat with admin by chatbox if you forgate old pin")
     }
 
 
     return (
         <>
 
-            <div className="min-h-screen bg-transparent text-white p-8">
+            <div className="min-h-screen bg-transparent text-white md:p-8">
 
                 <div defaultValue="personal-info" className="w-full max-w-3xl">
 
@@ -131,7 +152,7 @@ const Settings = () => {
                                 <Label className="text-gray-400 mb-2 block">Phone No</Label>
                                 <Input
                                     className="bg-[#2A1B3D] border-none text-white placeholder-gray-500 py-3 px-4 rounded-xl focus:ring-2 focus:ring-blue-600"
-                                    placeholder="+44 122-343-34343"
+                                    placeholder="03182010345"
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(e.target.value)}
                                 />
@@ -140,7 +161,7 @@ const Settings = () => {
 
                         <div className="flex gap-4 mt-8">
 
-                            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleUpdate}>
+                            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleUpdate} disabled={!isChanged}>
                                 Update
                             </Button>
                         </div>
@@ -162,7 +183,7 @@ const Settings = () => {
                                         placeholder="Enter PIN"
                                         value={currentPin}
                                         onChange={(e) => setCurrentPin(e.target.value)}
-                                        maxLength={6}
+                                        maxLength={40}
                                     />
                                     <button
                                         type="button"
@@ -185,7 +206,7 @@ const Settings = () => {
                                         placeholder="Enter PIN"
                                         value={newPin}
                                         onChange={(e) => setNewPin(e.target.value)}
-                                        maxLength={6}
+                                        maxLength={40}
                                     />
                                     <button
                                         type="button"
@@ -208,7 +229,7 @@ const Settings = () => {
                                         placeholder="Enter PIN"
                                         value={confirmPin}
                                         onChange={(e) => setConfirmPin(e.target.value)}
-                                        maxLength={6}
+                                        maxLength={40}
                                     />
                                     <button
                                         type="button"

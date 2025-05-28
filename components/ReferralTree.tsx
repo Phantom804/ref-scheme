@@ -44,7 +44,7 @@ const ReferralTree: React.FC = ({ }) => {
 
     // Map to track loaded nodes to prevent refetching
     const [loadedNodes, setLoadedNodes] = useState<Record<string, boolean>>({});
-    console.log(user)
+   
     const rootUser = user;
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -76,7 +76,7 @@ const ReferralTree: React.FC = ({ }) => {
 
     // Function to convert a user to a tree node
     const userToTreeNode = (user: ReferralUser, hasChildren = false): TreeNode => ({
-        name: user.name || user.phoneNumber,
+        name: user.phoneNumber,
         attributes: {
             'Referral Code': user.referralCode,
             'Phone': user.phoneNumber,
@@ -98,16 +98,8 @@ const ReferralTree: React.FC = ({ }) => {
         }
     }, [rootUser]);
 
-    // Force a re-render after component mounts to ensure proper centering
-    const [forceRender, setForceRender] = useState(0);
-    useEffect(() => {
-        // Small delay to ensure DOM is fully rendered
-        const timer = setTimeout(() => {
-            setForceRender(prev => prev + 1);
-        }, 200);
-
-        return () => clearTimeout(timer);
-    }, []);
+    // State to control tree visibility until dimensions are properly calculated
+    const [treeReady, setTreeReady] = useState(false);
 
     // Update dimensions when the component mounts or window resizes
     useEffect(() => {
@@ -115,6 +107,8 @@ const ReferralTree: React.FC = ({ }) => {
             if (containerRef.current) {
                 const { width, height } = containerRef.current.getBoundingClientRect();
                 setDimensions({ width, height });
+                // Set tree as ready after a small delay to ensure proper positioning
+                setTimeout(() => setTreeReady(true), 200);
             }
         };
 
@@ -219,7 +213,12 @@ const ReferralTree: React.FC = ({ }) => {
                 />
                 {/* User icon */}
                 <foreignObject x="-12" y="-12" width="24" height="24">
-                    <User color="#8B5CF6" size={24} />
+                    <User color="#8B5CF6" size={24} onClick={() => {
+                        if (!isLoaded && node.data) {
+                            fetchReferrals(node.data.referralCode, node);
+                        }
+                        toggleNode();
+                    }} />
                 </foreignObject>
                 {/* Name label with white background */}
                 <rect
@@ -237,7 +236,7 @@ const ReferralTree: React.FC = ({ }) => {
                     x="0"
                     y="53"
                     textAnchor="middle"
-                    style={{ fill: '#1F2937', fontSize: '14px', fontFamily: 'inter', letterSpacing: 3, textDecoration: 'none' }}
+                    style={{ fill: '#1F2937', fontSize: '11px', fontFamily: 'inter', letterSpacing: 1, textDecoration: 'none' }}
                 >
                     {node.name}
                 </text>
@@ -246,7 +245,7 @@ const ReferralTree: React.FC = ({ }) => {
     };
 
     if (!treeData) {
-        return <div>Loading tree data...</div>;
+        return <div></div>;
     }
 
     return (
@@ -255,18 +254,28 @@ const ReferralTree: React.FC = ({ }) => {
             <div className="h-[400px] md:h-[600px] w-full border border-purple-600 rounded-lg overflow-hidden">
 
                 <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-                    <Tree
-                        data={treeData}
-                        translate={{ x: dimensions.width / 2, y: dimensions.height / 3 }}
-                        orientation="vertical"
-                        nodeSize={{ x: dimensions.width < 768 ? 150 : 200, y: dimensions.width < 768 ? 80 : 100 }}
-                        separation={{ siblings: dimensions.width < 768 ? 1.5 : 2, nonSiblings: dimensions.width < 768 ? 2 : 2.5 }}
-                        renderCustomNodeElement={renderCustomNode}
-                        pathFunc="step"
-                        pathClassFunc={() => 'tree-link'}
-                        centeringTransitionDuration={800}
-                        transitionDuration={800}
-                    />
+                    {!treeReady && (
+                        <div className="flex items-center justify-center h-full">
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+                            <span className="ml-2 text-gray-300">Preparing tree view...</span>
+                        </div>
+                    )}
+                    <div className={`w-full h-full transition-opacity duration-500 ${treeReady ? 'opacity-100' : 'opacity-0'}`}>
+                        {treeReady && (
+                            <Tree
+                                data={treeData}
+                                translate={{ x: dimensions.width / 2, y: dimensions.height / 3 }}
+                                orientation="vertical"
+                                nodeSize={{ x: dimensions.width < 768 ? 150 : 200, y: dimensions.width < 768 ? 80 : 100 }}
+                                separation={{ siblings: dimensions.width < 768 ? 1.5 : 2, nonSiblings: dimensions.width < 768 ? 2 : 2.5 }}
+                                renderCustomNodeElement={renderCustomNode}
+                                pathFunc="step"
+                                pathClassFunc={() => 'tree-link'}
+                                centeringTransitionDuration={800}
+                                transitionDuration={800}
+                            />
+                        )}
+                    </div>
 
                 </div>
             </div>

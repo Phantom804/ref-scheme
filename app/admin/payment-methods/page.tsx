@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 
-// Sample data - replace with actual data from your backend
 type PaymentMethod = {
     _id: string;
     accountTitle: string;
@@ -24,24 +23,24 @@ const PaymentMethods: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
-    useEffect(() => {
-        const fetchPaymentMethods = async () => {
-            setLoading(true);
-            try {
-                const response = await fetch('/api/admin/payment-methods');
-                const data = await response.json();
-                if (data.success) {
-                    setPaymentMethods(data.paymentMethods);
-                }
-            } catch (error) {
-                console.error('Error fetching payment methods:', error);
-            } finally {
-                setLoading(false);
+    const fetchPaymentMethods = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('/api/admin/payment-methods')
+            const data = await response.json();
+            if (data.success) {
+                setPaymentMethods(data.paymentMethods);
             }
-        };
-
+        } catch (error) {
+            console.error('Error fetching payment methods:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    useEffect(() => {
         fetchPaymentMethods();
     }, []);
+
     const [formData, setFormData] = useState({
         accountTitle: '',
         accountNumber: '',
@@ -63,7 +62,8 @@ const PaymentMethods: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(formData),
+                    credentials: 'include'
                 });
                 const data = await response.json();
                 if (data.success) {
@@ -108,22 +108,16 @@ const PaymentMethods: React.FC = () => {
                     bankName: method.bankName,
                     logoUrl: method.logoUrl
 
-                })
+                }),
+                credentials: 'include'
             });
             const data = await response.json();
             if (data.success) {
                 toast.success(data.message);
-                setFormData({
-                    accountTitle: method.accountTitle,
-                    accountNumber: method.accountNumber.replace('****', ''),
-                    bankName: method.bankName,
-                    logoUrl: method.logoUrl
-
-
-
-                });
                 setEditingId(method._id);
-                setShowForm(true);
+                setShowForm(false);
+                fetchPaymentMethods();
+
             } else {
                 toast.error(data.message);
             }
@@ -133,7 +127,6 @@ const PaymentMethods: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        console.log(id);
         try {
             const response = await fetch(`/api/admin/payment-methods`, {
                 method: 'DELETE',
@@ -163,14 +156,14 @@ const PaymentMethods: React.FC = () => {
 
     return (
         <div className="pt-8 md:ml-16 lg:ml-64 transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Payment Details</h1>
                     <p className="text-gray-400">Manage your payment information</p>
                 </div>
                 {!showForm && (
                     <Button
-
+                        className="mt-4 sm:mt-0"
                         onClick={() => setShowForm(true)}
                     >
                         <Plus size={16} />
@@ -278,44 +271,45 @@ const PaymentMethods: React.FC = () => {
                         {paymentMethods.map((method) => (
                             <div
                                 key={method._id}
-                                className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700"
+                                className="flex flex-col md:flex-row items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700"
                             >
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex-shrink-0">
-                                        <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
+                                <div className="flex flex-col md:flex-row items-center w-full md:gap-3 md:w-auto text-center md:text-left space-y-4 md:space-y-0 md:space-x-4">
+                                    <div className="flex-shrink-0 mx-auto md:mx-0">
+                                        <div className="w-12 h-12 rounded-full bg-purple-600/20 flex items-center justify-center">
                                             <img
-                                                src={method.logoUrl || `https://logo.clearbit.com/${method.bankName.toLowerCase().replace(/\s+/g, '')}.com`}
+                                                src={method.logoUrl}
                                                 alt={method.bankName}
-                                                className="w-6 h-6 rounded"
-
+                                                className="w-7 h-7 rounded"
                                             />
                                         </div>
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
+                                    <div className="w-full md:w-auto">
+                                        <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                                             <h3 className="text-sm font-medium text-white">{method.bankName}</h3>
-                                            {method.isDefault && <Badge >Default</Badge>}
+                                            {method.isDefault && <Badge className="text-xs">Default</Badge>}
                                         </div>
                                         <p className="text-sm text-gray-400">
                                             {method.accountTitle} • {method.accountNumber}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex flex-row justify-center mt-4 md:mt-0 space-y-0 space-x-2 w-full md:w-auto">
                                     <Button
                                         variant="outline"
                                         size="sm"
-
+                                        className="flex-1 md:flex-none justify-center"
                                         onClick={() => handleEditButtonClick(method)}
                                     >
-                                        <Pencil size={14} />
+                                        <Pencil size={14} className="mr-1" />
                                         Edit
                                     </Button>
                                     <Button
                                         variant="destructive"
+                                        size="sm"
+                                        className="flex-1 md:flex-none justify-center"
                                         onClick={() => handleDelete(method._id)}
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={14} className="mr-1" />
                                         Delete
                                     </Button>
                                 </div>

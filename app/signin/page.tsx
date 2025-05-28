@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
@@ -16,8 +16,13 @@ export default function SignIn() {
     const [error, setError] = useState("");
 
     const router = useRouter();
-    const { signIn } = useAuth();
+    const { signIn, isAuthenticated } = useAuth();
 
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/');
+        }
+    }, [isAuthenticated]);
     // Validate phone number format
     const validatePhoneNumber = (phone: string) => {
         // Basic phone validation - can be adjusted based on your requirements
@@ -27,7 +32,7 @@ export default function SignIn() {
 
     // Validate password strength
     const validatePassword = (password: string) => {
-        return password.length >= 4; // Basic PIN validation
+        return password.length >= 4;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +91,7 @@ export default function SignIn() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br">
             <div className="rounded-2xl h-[95vh] bg-[#1c0f2e]/80 p-8 px-12 shadow-xl w-full max-w-md relative">
 
-                <div className="text-white text-2xl font-bold text-center mb-1">Sign in to our platform</div>
+                <div className="text-white text-2xl font-bold text-center mb-1">Sign in</div>
                 <div className="text-gray-400 text-center mb-6 text-sm">Login to continue</div>
 
                 {error && (

@@ -1,17 +1,15 @@
 "use client";
 
-import { Layers, Users, DollarSign, ShoppingCart, TrendingUp, TrendingDown, Shield, ShieldAlert, Loader2 } from 'lucide-react';
+import { Layers, Users, DollarSign, ShoppingCart, TrendingUp, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import BarChart from '@/components/charts/BarChart';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface DashboardStat {
     title: string;
     value: string;
-    change: string;
-    trend: 'up' | 'down';
     icon?: React.ReactNode;
 }
 
@@ -28,13 +26,13 @@ interface CategoryData {
 }
 
 const Dashboard: React.FC = () => {
-    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<DashboardStat[]>([]);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
     const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
 
-    // Fetch dashboard data
+    const router = useRouter();
+
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -47,7 +45,6 @@ const Dashboard: React.FC = () => {
 
                 const data = await response.json();
 
-                // Add icons to stats
                 const statsWithIcons = data.stats.map((stat: DashboardStat) => ({
                     ...stat,
                     icon: getIconForStat(stat.title)
@@ -67,7 +64,6 @@ const Dashboard: React.FC = () => {
         fetchDashboardData();
     }, []);
 
-    // Helper function to get the appropriate icon for each stat
     const getIconForStat = (title: string) => {
         switch (title) {
             case 'Total Revenue':
@@ -99,16 +95,22 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                    <p className="text-gray-400">Welcome back, 'Admin'</p>
-                    <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200">
-                        Admin Role
-                    </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 {stats.map((stat, index) => (
-                    <Card key={index} className="border-t-4 border-t-purple-600">
+                    <Card
+                        key={index}
+                        className="border-t-4 border-t-purple-600 cursor-pointer"
+                        onClick={() => {
+                            if (stat.title === 'Total Orders') {
+                                router.push('/admin/Orders'); // Replace with your actual orders page path
+                            } else if (stat.title === 'Total Products') {
+                                router.push('/admin/products'); // Replace with your actual products page path
+                            }
+                        }}
+                    >
                         <div className="flex items-center justify-between">
                             <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gray-800">
                                 {stat.icon}
@@ -116,8 +118,7 @@ const Dashboard: React.FC = () => {
                             <div className="text-right">
                                 <p className="text-sm text-gray-400">{stat.title}</p>
                                 <p className="text-2xl font-semibold text-white mt-1">{stat.value}</p>
-                                <p className={`text-xs ${stat.trend === 'up' ? 'text-green-400' : 'text-red-400'} mt-1`}>
-                                </p>
+
                             </div>
                         </div>
                     </Card>

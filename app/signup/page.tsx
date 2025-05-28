@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,32 +9,45 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import TermsModal from "@/components/TermsModal";
+import PhoneInput from "@/components/ui/phone-input";
+
+
+import { toast } from "sonner";
 
 export default function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [checked, setChecked] = useState(false);
-    const [form, setForm] = useState({ name: "", phoneNumber: "", referredByCode: "", password: "", confirm: "" });
+    const [form, setForm] = useState({ name: "", phoneNumber: "", referredByCode: "", country: "", password: "", confirm: "" });
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [showTermsModal, setShowTermsModal] = useState(false);
     const router = useRouter();
-    const { signUp } = useAuth();
+    const { signUp, isAuthenticated } = useAuth();
 
 
-    // Validate phone number format
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/');
+        }
+    }, [isAuthenticated]);
+
+    const handlePhoneChange = (phone: string, country: string) => {
+        setForm({ ...form, phoneNumber: phone, country: country });
+    }
+
     const validatePhoneNumber = (phone: string) => {
-        // Basic phone validation - can be adjusted based on your requirements
+
         const phoneRegex = /^[0-9]{10,15}$/;
-        return phone === "" || phoneRegex.test(phone); // Allow empty for optional field
+        return phone === "" || phoneRegex.test(phone);
     };
 
     // Validate password strength
     const validatePassword = (password: string) => {
-        return password.length >= 4; // Basic PIN validation
+        return password.length >= 4 && password.length <= 40;
     };
 
-    // Sanitize input to prevent XSS
     const sanitizeInput = (input: string) => {
         return input.trim()
             .replace(/</g, '&lt;')
@@ -94,9 +107,12 @@ export default function SignUp() {
             const sanitizedPhone = form.phoneNumber ? sanitizeInput(form.phoneNumber) : "";
             const sanitizedPassword = form.password.trim(); // Don't modify password content, just trim
 
-            const result = await signUp(sanitizedName, sanitizedreferredByCode, sanitizedPhone, sanitizedPassword);
+            const result = await signUp(sanitizedName, sanitizedreferredByCode, form.country, sanitizedPhone, sanitizedPassword);
 
-            if (!result.success) {
+            if (result.success) {
+                toast.success("Sign up successful! login Now");
+                router.push("/signin");
+            } else {
                 setError(result.message || "Sign up failed");
             }
         } catch (error) {
@@ -133,14 +149,8 @@ export default function SignUp() {
                     </div>
                     <div>
                         <label className="block text-gray-300 mb-1">Phone</label>
-                        <Input
-                            type="number"
-                            placeholder="Enter your Phone"
-                            className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
-                            value={form.phoneNumber}
-                            onChange={e => setForm({ ...form, phoneNumber: e.target.value })}
-                            required
-                        />
+
+                        <PhoneInput onPhoneChange={handlePhoneChange} country="PK" placeholder="eg : 03181210111" />
                     </div>
                     <div>
                         <label className="block text-gray-300 mb-1">Referral Code  <span className="text-gray-500">(optional)</span></label>
@@ -150,7 +160,6 @@ export default function SignUp() {
                             className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
                             value={form.referredByCode}
                             onChange={e => setForm({ ...form, referredByCode: e.target.value })}
-                            required
                         />
                     </div>
                     <div>

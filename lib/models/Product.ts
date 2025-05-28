@@ -6,8 +6,10 @@ export interface IProduct extends Document {
     price: number;
     category: string;
     description: string;
+    referralLimt: number;
     imageUrl: string | null;
     productCode: string;
+    isLocked: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -22,6 +24,8 @@ const ProductSchema = new Schema<IProduct>(
         name: { type: String, required: true },
         price: { type: Number, required: true },
         category: { type: String, required: true },
+        referralLimt: { type: Number, required: true },
+        isLocked: { type: Boolean, default: false },
         description: { type: String, required: true },
         imageUrl: { type: String, default: null },
     },
@@ -30,20 +34,7 @@ const ProductSchema = new Schema<IProduct>(
     }
 );
 
-// Virtual for id
-ProductSchema.virtual('id').get(function (this: ProductDocument) {
-    return this._id.toString();
-});
 
-// Ensure virtual fields are serialized
-ProductSchema.set('toJSON', {
-    virtuals: true,
-    transform: (doc, ret) => {
-        delete ret._id;
-        delete ret.__v;
-        return ret;
-    },
-});
 
 // Use existing model or create a new one (for Next.js hot reloading in development)
 export const Product = models.Product || model<IProduct>('Product', ProductSchema);

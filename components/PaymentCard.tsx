@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import PurchaseConfirmationDialog from "@/components/PurchaseConfirmationDialog";
 import PurchaseSuccessDialog from "@/components/PurchaseSuccessDialog";
-import { useRouter } from "next/navigation";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext"
 
 type PaymentMethod = {
     id: number;
@@ -28,6 +29,7 @@ type PaymentCardProps = {
 }
 
 function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) {
+    const { isAuthenticated } = useAuth();
     const [quantity, setQuantity] = useState(1);
     const [paymentMethod, setPaymentMethod] = useState("");
     const [referralCode, setReferralCode] = useState("");
@@ -38,7 +40,6 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
     const [TotalPrice, setTotalPrice] = useState();
 
     const [buyer, setBuyer] = useState("");
-    const router = useRouter();
     const [paymentDetails, setPaymentDetails] = useState<PaymentMethod[]>([]);
 
     useEffect(() => {
@@ -46,7 +47,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
             try {
                 const response = await fetch('/api/payment-method');
                 const data = await response.json();
-                console.log('API Response:', data); // Keep console log for debugging
+
                 if (data.success && Array.isArray(data.paymentMethods)) {
                     setPaymentDetails(data.paymentMethods);
                 } else {
@@ -63,21 +64,26 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
 
 
     const handleBuyNow = async () => {
+        if (!isAuthenticated) {
+            toast.warning("Please login to continue!");
+            return;
+        }
         if (referralCode) {
-            console.log('Referral Code:', referralCode);
+
             try {
                 const response = await fetch('/api/referrel-check', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ referralCode }),
+                    body: JSON.stringify({ referralCode, productId: id }),
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    toast.error(data.message || 'Invalid referral code.');
+                    toast.error(data.message);
                     return;
                 }
 
@@ -85,7 +91,6 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                     setShowConfirmDialog(true);
                 }
             } catch (error) {
-                console.error('Error checking referral code:', error);
                 toast.error('Failed to check referral code. Please try again.');
             }
         } else {
@@ -100,7 +105,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
             return;
         }
         let toastID = toast.loading("Placeing order...");
-        setIsSubmitting(true);
+
 
         try {
             // Create form data for the file upload
@@ -116,25 +121,26 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 body: formData,
+                credentials: 'include'
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to create order');
-            }
+                toast.error(data.message || 'Failed to create order');
+            } else {
 
-            setTransactionId(data.transactionId);
-            setTotalPrice(data.totalPrice);
-            setBuyer(data.buyer);
-            setShowConfirmDialog(false);
-            setShowSuccessDialog(true);
-            toast.success("Order placed successfully!");
+                setTransactionId(data.transactionId);
+                setTotalPrice(data.totalPrice);
+                setBuyer(data.buyer);
+                setShowConfirmDialog(false);
+                setShowSuccessDialog(true);
+                toast.success("Order placed successfully!");
+            }
         } catch (error) {
-            console.error('Error creating order:', error);
             toast.error(typeof error === 'string' ? error : 'Failed to create order. Please try again.');
         } finally {
-            setIsSubmitting(false);
+
             toastID = toast.dismiss(toastID);
         }
     };
@@ -169,7 +175,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
 
                                 return (
                                     <div
-                                        className={`mt-4 overflow-hidden transition-all duration-500 ease-in-out origin-top ${paymentMethod ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}
+                                        className={`mt-4 overflow-hidden origin-top ${paymentMethod ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}
                                     >
                                         <div className="p-4 bg-[#2b194b] border border-[#47396d] rounded-lg text-white space-y-2">
                                             <h5 className="text-sm font-semibold text-amber-300 uppercase tracking-wide">
@@ -187,7 +193,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                             })()
                         }
                         <div className="mt-7">
-                            <label className="block text-sm mb-1">Enter Reffrel Code</label>
+                            <label className="block text-sm mb-1">Enter Referral Code</label>
                             <Input
                                 value={referralCode}
                                 onChange={e => setReferralCode(e.target.value)}
@@ -224,11 +230,30 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                     <div className="mt-8">
                         <div className="rounded-xl bg-gradient-to-r from-[#431d9e] to-[#2e70b7] p-4 flex flex-col items-center mb-2">
                             <span className="text-white text-lg font-semibold mb-1">Share and win bonus</span>
-                            <Button variant="secondary" className="mt-0 bg-white text-[#5215b8] font-bold rounded-xl">Refer Now</Button>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="secondary" className="mt-0 bg-white text-[#5215b8] hover:text-white font-bold rounded-xl">Refer Now</Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 bg-[#271843] border-[#47396d] text-white">
+                                    <div className="space-y-4">
+                                        <h4 className="font-semibold text-lg">Share & Earn!</h4>
+                                        <p className="text-sm text-gray-300">Your referral code is your registered mobile number. Share it with friends and earn commission on their purchases!</p>
+                                        <div className="p-3 bg-[#2b194b] rounded-lg">
+                                            <p className="text-sm text-amber-300">How it works:</p>
+                                            <ul className="mt-2 space-y-2 text-sm text-gray-300">
+                                                <li>• Share your mobile number as referral code</li>
+                                                <li>• Friends use it during purchase</li>
+                                                <li>• You earn commission on successful orders</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                 </Card>
             </div>
+
             <PurchaseConfirmationDialog
                 isOpen={showConfirmDialog}
                 onClose={() => setShowConfirmDialog(false)}
@@ -248,6 +273,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 productId={id}
                 productName={productName}
                 quantity={quantity}
+                referralCode={referralCode}
                 ToalPrice={TotalPrice}
                 transactionId={transactionId}
             />

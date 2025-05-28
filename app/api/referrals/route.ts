@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
         // Connect to the database
         await connectToDatabase();
 
-        // Get the referral code from the query parameters
+
         const searchParams = request.nextUrl.searchParams;
         const referralCode = searchParams.get('referralCode');
 

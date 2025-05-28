@@ -4,7 +4,7 @@ import { User } from '@/lib/models/User';
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, phoneNumber, referredByCode, password } = await req.json();
+        const { name, phoneNumber, referredByCode, password, country } = await req.json();
 
         // Validate inputs
         if (!name || !phoneNumber || !password) {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
         if (existingUser) {
             return NextResponse.json(
-                { success: false, message: 'User with this phone already exists' },
+                { success: false, message: 'User with this Number already exists' },
                 { status: 409 }
             );
         }
@@ -32,19 +32,19 @@ export async function POST(req: NextRequest) {
         const user = await User.create({
             name,
             referredByCode,
-            referredCode: phoneNumber,
+            referralCode: phoneNumber,
             phoneNumber,
             password: password,
+            country: country,
             isVerified: true
         });
-
 
 
         return NextResponse.json(
             {
                 success: true,
                 message: 'Account created successfully. Login Now',
-                userId: user.id
+                userId: user._id
             },
             { status: 201 }
         );

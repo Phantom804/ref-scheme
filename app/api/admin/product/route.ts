@@ -39,14 +39,16 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const name = formData.get('name') as string;
         const price = parseFloat(formData.get('price') as string);
+        const referralLimt = parseInt(formData.get('referralLimt') as string);
         const category = formData.get('category') as string;
         const description = formData.get('description') as string;
         const imageFile = formData.get('image') as File;
+        const isLocked = formData.get('isLocked') === 'true';
 
         // Validate required fields
-        if (!name || !price || !category || !description) {
+        if (!name || !price || !category || !description || !imageFile) {
             return NextResponse.json(
-                { error: 'Missing required fields' },
+                { error: 'Missing required fields And add Image' },
                 { status: 400 }
             );
         }
@@ -73,9 +75,11 @@ export async function POST(request: NextRequest) {
             name,
             price,
             category,
+            referralLimt,
             description,
             imageUrl,
             productCode,
+            isLocked,
         });
 
         // Add price history
@@ -95,37 +99,70 @@ export async function POST(request: NextRequest) {
     }
 }
 
+
 export async function GET(request: NextRequest) {
     try {
-        // Connect to the database
+        const searchParams = request.nextUrl.searchParams;
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const search = searchParams.get('search') || '';
+        const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
+        const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
+        const skip = (page - 1) * limit;
+
         await connectToDatabase();
 
-        // Get product ID from query params
-        const { searchParams } = new URL(request.url);
-        const id = searchParams.get('id');
+        const searchQuery: any = {};
 
-        if (!id) {
-            return NextResponse.json(
-                { error: 'Product ID is required' },
-                { status: 400 }
-            );
+        if (search) {
+            searchQuery.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
         }
 
-        // Find product by ID
-        const product = await Product.findById(id);
-
-        if (!product) {
-            return NextResponse.json(
-                { error: 'Product not found' },
-                { status: 404 }
-            );
+        const category = searchParams.get('category') || '';
+        if (category) {
+            searchQuery.category = category;
         }
 
-        return NextResponse.json(product, { status: 200 });
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            searchQuery.price = {};
+            if (minPrice !== undefined) {
+                searchQuery.price.$gte = minPrice;
+            }
+            if (maxPrice !== undefined) {
+                searchQuery.price.$lte = maxPrice;
+            }
+        }
+
+        const totalProducts = await Product.countDocuments(searchQuery);
+
+        const products = await Product.find(searchQuery)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .exec();
+
+        const formattedProducts = products.map(product => ({
+            id: product._id,
+            name: product.name,
+            price: product.price,
+            imageUrl: product.imageUrl,
+            category: product.category
+        }));
+
+        return NextResponse.json({
+            products: formattedProducts,
+            totalPages: Math.ceil(totalProducts / limit),
+            currentPage: page,
+            totalProducts
+        });
+
     } catch (error) {
-        console.error('Error fetching product:', error);
+        console.error('Error fetching products:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch product' },
+            { error: 'Internal Server Error' },
             { status: 500 }
         );
     }
@@ -141,10 +178,12 @@ export async function PATCH(request: NextRequest) {
         const id = formData.get('id') as string;
         const name = formData.get('name') as string;
         const price = parseFloat(formData.get('price') as string);
+        const referralLimt = parseInt(formData.get('referralLimt') as string);
         const category = formData.get('category') as string;
         const description = formData.get('description') as string;
         const imageFile = formData.get('image') as File;
         const existingImageUrl = formData.get('imageUrl') as string;
+        const isLocked = formData.get('isLocked') === 'true';
 
         // Validate required fields
         if (!id || !name || !price || !category || !description) {
@@ -176,9 +215,11 @@ export async function PATCH(request: NextRequest) {
         const updatedFields: any = {
             name,
             price,
+            referralLimt,
             category,
             description,
             imageUrl,
+            isLocked,
         };
 
         const updatedProduct = await Product.findByIdAndUpdate(
@@ -199,7 +240,7 @@ export async function PATCH(request: NextRequest) {
             await PriceHistory.create({
                 productId: updatedProduct._id,
                 price: updatedProduct.price,
-                date: new Date(), // Or use updatedProduct.updatedAt if preferred
+                date: new Date(),
             });
         }
 

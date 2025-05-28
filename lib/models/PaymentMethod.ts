@@ -4,6 +4,7 @@ export interface IPaymentMethod extends Document {
     accountTitle: string;
     accountNumber: string;
     bankName: string;
+    logoUrl: string;
     isDefault: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -23,6 +24,10 @@ const PaymentMethodSchema = new Schema<IPaymentMethod>(
         bankName: {
             type: String,
             required: [true, 'Bank name is required'],
+        },
+        logoUrl: {
+            type: String,
+            required: [true, 'logo is required'],
         },
         isDefault: {
             type: Boolean,

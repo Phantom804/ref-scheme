@@ -27,37 +27,49 @@ export async function GET() {
         // Get top products by sales
         const topProducts = await Order.aggregate([
             { $match: { status: 'Completed' } },
+
+            // Join with products to ensure the product still exists
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: 'productId',
+                    foreignField: '_id',
+                    as: 'productDetails'
+                }
+            },
+
+            // Flatten the joined array
+            { $unwind: '$productDetails' },
+
+            // Now safely group, since we know the product exists
             {
                 $group: {
                     _id: '$productId',
                     name: { $first: '$productName' },
                     sales: { $sum: 1 },
-                    revenue: { $sum: '$price' }
+                    revenue: { $sum: '$price' },
+                    category: { $first: '$productDetails.category' }
                 }
             },
-            { $sort: { sales: -1 } },
-            { $limit: 5 },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'productDetails'
-                }
-            },
-            {
 
+            // Sort by most sales
+            { $sort: { sales: -1 } },
+
+            // Limit to top 5
+            { $limit: 5 },
+
+            // Format the final output
+            {
                 $project: {
                     _id: 0,
                     name: 1,
                     sales: 1,
-                    price: { $concat: [{ $literal: "$" }, { $toString: "$revenue" }] },
-                    category: { $arrayElemAt: ['$productDetails.category', 0] }
+                    price: { $concat: [{ $literal: 'PKR ' }, { $toString: '$revenue' }] },
+                    category: 1
                 }
-
-
             }
         ]);
+
 
         // Get top categories by sales
         const topCategories = await Order.aggregate([
@@ -84,41 +96,31 @@ export async function GET() {
                     sales: 1
                 }
             },
-            { $sort: { sales: -1 } }
+            { $sort: { sales: -1 } },
+            { $limit: 5 }
         ]);
-
-        // Calculate percentage changes (mock data for now)
-        // In a real app, you would compare with previous period
-        const revenueChange = '+12.5%';
-        const usersChange = '+8.2%';
-        const productsChange = '+24.5%';
-        const ordersChange = '-3.8%';
 
         return NextResponse.json({
             stats: [
                 {
                     title: "Total Revenue",
-                    value: `$${totalRevenue.toFixed(2)}`,
-                    change: revenueChange,
-                    trend: revenueChange.startsWith('+') ? 'up' : 'down',
+                    value: `PKR ${totalRevenue.toFixed(2)}`,
                 },
                 {
                     title: "Total Users",
                     value: totalUsers.toString(),
-                    change: usersChange,
-                    trend: usersChange.startsWith('+') ? 'up' : 'down',
+
+
                 },
                 {
                     title: "Total Products",
                     value: totalProducts.toString(),
-                    change: productsChange,
-                    trend: productsChange.startsWith('+') ? 'up' : 'down',
+
                 },
                 {
                     title: "Total Orders",
                     value: totalOrders.toString(),
-                    change: ordersChange,
-                    trend: ordersChange.startsWith('+') ? 'up' : 'down',
+
                 },
             ],
             topProducts,

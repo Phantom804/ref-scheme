@@ -39,10 +39,31 @@ export async function GET(req: NextRequest) {
     }).sort({ date: 1 });
 
     // Format for chart (grouped)
-    const formatted = raw.map((entry) => ({
-        price: entry.price,
-        date: entry.date.toISOString(),
-    }));
+    const formatted = raw.map((entry) => {
+        const date = new Date(entry.date);
+        let name = '';
+
+        // Format the name based on the range
+        if (range === 'yearly') {
+            // For yearly view, show month abbreviation (Jan, Feb, etc.)
+            name = date.toLocaleDateString('en-US', { month: 'short' });
+        } else if (range === '6months') {
+            // For 6 months view, show month abbreviation
+            name = date.toLocaleDateString('en-US', { month: 'short' });
+        } else if (range === 'monthly') {
+            // For monthly view, show day and month
+            name = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        } else if (range === 'daily') {
+            // For daily view, show time
+            name = date.toLocaleDateString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        return {
+            price: entry.price,
+            date: entry.date.toISOString(),
+            name: name
+        };
+    });
 
     return NextResponse.json(formatted);
 }

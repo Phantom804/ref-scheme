@@ -6,17 +6,20 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from 'sonner';
 import Pagination from '@/components/Pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import PhoneNumbersDialog from '@/components/admin/PhoneNumbersDialog';
 
 interface User {
     _id: string;
     name?: string;
     email: string;
+    country?: string;
     phoneNumber?: string;
     password?: string;
     role: string;
@@ -34,15 +37,39 @@ const Users: React.FC = () => {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [filters, setFilters] = useState({
         role: 'all',
-        isVerified: 'all',
         isBlocked: 'all'
     });
     const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
     const usersPerPage = 5;
+    const [isPhoneNumbersDialogOpen, setIsPhoneNumbersDialogOpen] = useState(false);
+    const [allPhoneNumbers, setAllPhoneNumbers] = useState<string[]>([]);
+    const [numbersLoading, setNumbersLoading] = useState(false);
 
     useEffect(() => {
         fetchUsers();
     }, [currentPage, searchTerm]);
+
+    useEffect(() => {
+        if (isPhoneNumbersDialogOpen) {
+            const fetchAllPhoneNumbers = async () => {
+                setNumbersLoading(true);
+                try {
+                    const response = await fetch('/api/admin/users/phone-numbers');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch phone numbers');
+                    }
+                    const data = await response.json();
+                    setAllPhoneNumbers(data.phoneNumbers);
+                } catch (error) {
+
+                    toast.error('Failed to load all phone numbers.');
+                } finally {
+                    setNumbersLoading(false);
+                }
+            };
+            fetchAllPhoneNumbers();
+        }
+    }, [isPhoneNumbersDialogOpen]);
 
     const fetchUsers = async (page = currentPage, search = searchTerm, currentFilters = filters) => {
         try {
@@ -52,9 +79,7 @@ const Users: React.FC = () => {
             if (currentFilters.role && currentFilters.role !== 'all') {
                 queryString += `&role=${currentFilters.role}`;
             }
-            if (currentFilters.isVerified && currentFilters.isVerified !== 'all') {
-                queryString += `&isVerified=${currentFilters.isVerified}`;
-            }
+
             if (currentFilters.isBlocked && currentFilters.isBlocked !== 'all') {
                 queryString += `&isBlocked=${currentFilters.isBlocked}`;
             }
@@ -80,6 +105,7 @@ const Users: React.FC = () => {
     };
 
     const handleSaveUser = async (userData: Partial<User & { password?: string }>) => {
+
         try {
             const response = await fetch('/api/admin/users', {
                 method: 'PUT',
@@ -104,6 +130,9 @@ const Users: React.FC = () => {
 
     const handleDeleteUser = async (userId: string) => {
         try {
+            const confirmDelete = window.confirm('Are you sure you want to delete this user?');
+            if (!confirmDelete) return;
+
             const response = await fetch(`/api/admin/users?id=${userId}`, {
                 method: 'DELETE',
             });
@@ -142,6 +171,13 @@ const Users: React.FC = () => {
                     <h1 className="text-2xl font-bold text-white">Users</h1>
                     <p className="text-gray-400">Manage user accounts and permissions</p>
                 </div>
+                <Button
+                    className="mt-4 sm:mt-0"
+                    onClick={() => setIsPhoneNumbersDialogOpen(true)}
+                >
+                    <UserPlus size={16} />
+                    All numbers
+                </Button>
             </div>
 
             <Card>
@@ -171,25 +207,7 @@ const Users: React.FC = () => {
                         </PopoverTrigger>
                         <PopoverContent className="w-80 bg-gray-800 border-gray-700 text-white p-4 space-y-4">
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Verification Status</Label>
-                                    <Select
-                                        value={filters.isVerified}
-                                        onValueChange={(value) => {
-                                            setFilters(prev => ({ ...prev, isVerified: value }));
-                                            fetchUsers(1, searchTerm, { ...filters, isVerified: value });
-                                        }}
-                                    >
-                                        <SelectTrigger className="w-full bg-gray-800 border-gray-700 text-white">
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All</SelectItem>
-                                            <SelectItem value="true">Verified</SelectItem>
-                                            <SelectItem value="false">Not Verified</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+
 
                                 <div className="space-y-2">
                                     <Label>Block Status</Label>
@@ -218,7 +236,6 @@ const Users: React.FC = () => {
                                         onClick={() => {
                                             const defaultFilters = {
                                                 role: 'all',
-                                                isVerified: 'all',
                                                 isBlocked: 'all'
                                             };
                                             setFilters(defaultFilters);
@@ -231,51 +248,50 @@ const Users: React.FC = () => {
                             </div>
                         </PopoverContent>
                     </Popover>
+
                 </div>
 
                 <div className="relative overflow-x-auto rounded-lg">
-                    <table className="w-full text-sm text-left text-gray-300">
-                        <thead className="text-xs uppercase bg-gray-800 text-gray-400">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">Name</th>
-                                <th scope="col" className="px-6 py-3">Role</th>
-                                <th scope="col" className="px-6 py-3">Status</th>
-                                <th scope="col" className="px-6 py-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-4 text-center">
-                                        <div className="flex justify-center items-center py-10">
-                                            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-                                            <span className="ml-2 text-gray-400">Loading users...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : users.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-4 text-center">
-                                        No users found
-                                    </td>
-                                </tr>
-                            ) : (
-                                users.map((user) => (
-                                    <tr key={user._id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                                        <td className="px-6 py-4 font-medium text-white whitespace-nowrap">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                            <span className="ml-2 text-gray-400">Loading users...</span>
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className="text-center py-10">
+                            <p className="text-gray-400">No users found</p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
+                                    <TableHead className="text-gray-400">Name</TableHead>
+                                    <TableHead className="text-gray-400">Role</TableHead>
+                                    <TableHead className="text-gray-400">Country</TableHead>
+                                    <TableHead className="text-gray-400">Phone</TableHead>
+                                    <TableHead className="text-gray-400 text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {users.map((user) => (
+                                    <TableRow key={user._id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
+                                        <TableCell className="text-white font-medium whitespace-nowrap">
                                             {user.name}
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell className="text-white">
                                             <Badge
                                                 variant={user.role === 'admin' ? 'default' : 'secondary'}
                                             >
                                                 {user.role}
                                             </Badge>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell className="text-white">
+                                            {user.country || '-'}
+                                        </TableCell>
+                                        <TableCell className="text-white">
                                             {user.phoneNumber}
-                                        </td>
-                                        <td className="px-6 py-4 text-right space-x-2">
+                                        </TableCell>
+                                        <TableCell className="text-right space-x-2">
                                             <button
                                                 className="text-blue-500 hover:text-blue-400"
                                                 onClick={() => handleEditUser(user)}
@@ -288,12 +304,12 @@ const Users: React.FC = () => {
                                             >
                                                 <Trash2 size={16} />
                                             </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </div>
 
                 <Pagination
@@ -314,6 +330,13 @@ const Users: React.FC = () => {
                     setSelectedUser(null);
                 }}
                 onSave={handleSaveUser}
+            />
+
+            <PhoneNumbersDialog
+                isOpen={isPhoneNumbersDialogOpen}
+                onClose={() => setIsPhoneNumbersDialogOpen(false)}
+                phoneNumbers={allPhoneNumbers}
+                isNumLoading={numbersLoading}
             />
         </div>
     );

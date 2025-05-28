@@ -41,24 +41,20 @@ export async function GET(request: NextRequest) {
         // Build search query
         const searchQuery: any = {};
 
-        // General search
         if (search) {
             searchQuery.$or = [
                 { name: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } },
+                { phoneNumber: { $regex: search, $options: 'i' } },
             ];
         }
 
-        // Role filter based on requesting user's role
         if (user.role === 'admin') {
             searchQuery.role = 'user';
         }
+        // Exclude superAdmin users
+        searchQuery.role = { $ne: 'superAdmin' };
 
-        // Verification status filter
-        const isVerified = searchParams.get('isVerified');
-        if (isVerified) {
-            searchQuery.isVerified = isVerified === 'true';
-        }
+
 
         // Block status filter
         const isBlocked = searchParams.get('isBlocked');
@@ -141,7 +137,12 @@ export async function PUT(request: NextRequest) {
         }
         const user = await User.findByIdAndUpdate(
             _id,
-            { ...updateData, ...(role !== undefined ? { role } : {}), updatedAt: new Date() },
+            {
+                ...updateData,
+                ...(password ? { password } : {}), // Add this line
+                ...(role !== undefined ? { role } : {}),
+                updatedAt: new Date()
+            },
             { new: true }
         );
         if (!user) {

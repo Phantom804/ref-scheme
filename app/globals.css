@@ -112,6 +112,30 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+
+.react-international-phone-country-selector-dropdown {
+  background-color: #372759 !important;
+  color: white !important;
+  border: 1px solid #47396d;
+}
+
+/* Highlighted/hovered country */
+.react-international-phone-country-selector-dropdown .active,
+.react-international-phone-country-selector-dropdown li:hover {
+  background-color: #47396d !important;
+}
+
+/* Scrollbar for dark theme */
+.react-international-phone-country-selector-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.react-international-phone-country-selector-dropdown::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 3px;
+}
+
+
+
 /* Global styles for the tree component */
 .tree-link {
   stroke: #FFFFFF !important;
@@ -119,30 +143,58 @@
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.rd3t-node {
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-origin: center;
+.tree-link:hover {
+  stroke: #9333EA;
+  stroke-width: 3;
 }
 
-.rd3t-node circle {
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+.node circle {
+  transition: transform 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
 }
 
-.rd3t-node foreignObject {
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+.node circle:hover {
+  transform: scale(1.1);
+  fill: #0A0A0F;
+  stroke: #9333EA;
 }
 
-.rd3t-node rect {
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+.node rect {
+  transition: fill 0.3s ease, stroke 0.3s ease;
 }
 
-.rd3t-node text {
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+.node rect:hover {
+  fill: #F3F4F6;
+  stroke: #D1D5DB;
 }
 
-.rd3t-label {
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+.node text {
+  transition: fill 0.3s ease;
 }
+
+.node text:hover {
+  fill: #111827;
+}
+
+
+.price-badge {
+  background: linear-gradient(90deg, #7963e8 0%, #9b87f5 100%);
+}
+
+.product-card-gradient {
+  background: linear-gradient(135deg, #1a1625 0%, #241c33 100%);
+}
+
+.glass-effect {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 
 @media (max-width: 768px) {
   .rd3t-label {

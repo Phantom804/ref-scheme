@@ -1,22 +1,22 @@
 "use client";
 
-import { Bell, Search, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminHeader = () => {
+    const { user } = useAuth();
     return (
-        <header className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-end px-4 md:px-6">
-
+        <header className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-end fixed top-0 right-0 left-0 pr-2 ">
 
             <Link href="/admin/profile" className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
                     <User size={16} className="text-white" />
                 </div>
-                <span className="text-sm font-medium text-white hidden md:inline-block">Admin User</span>
+                <span className="text-sm font-medium text-white mr-0.7 hidden md:inline-block">{user?.name || "Admin User"}</span>
             </Link>
-
-        </header>
+        </header >
     );
 };
 
-export default AdminHeader; 
+export default AdminHeader;

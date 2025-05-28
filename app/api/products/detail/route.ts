@@ -1,25 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
+
+import mongoose from 'mongoose';
 import { Product } from '@/lib/models/Product';
+
 
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
-        const productId = searchParams.get('productId');
+        const id = searchParams.get('id');
 
-        if (!productId) {
+
+        if (!id) {
             return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+        }
+        if (!mongoose.isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Invalid Product ID' }, { status: 400 });
         }
 
         await connectToDatabase();
 
-        const product = await Product.findById(productId);
+        const product = await Product.findById(id);
 
         if (!product) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
 
-        return NextResponse.json(product);
+
+        const productData = product.toObject();
+        productData.id = productData._id.toString();
+        delete productData._id;
+
+        return NextResponse.json(productData);
     }
 
     catch (error) {

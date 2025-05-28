@@ -1,8 +1,8 @@
 "use client";
 
-import { Save, Image, X } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Save, Image, X, LockIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useState, useRef, FormEvent, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
@@ -31,7 +31,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         name: '',
         price: '',
         category: '',
-        description: ''
+        description: '',
+        referralLimt: 0,
+        isLocked: false
     });
     const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
 
@@ -42,7 +44,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                 setIsEditMode(true);
                 setLoading(true);
                 try {
-                    const response = await fetch(`/api/admin/product?id=${productId}`);
+                    const response = await fetch(`/api/admin/product/byid?productId=${productId}`);
                     if (!response.ok) {
                         throw new Error('Failed to fetch product data');
                     }
@@ -52,7 +54,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                         name: product.name,
                         price: product.price.toString(),
                         category: product.category,
-                        description: product.description || ''
+                        description: product.description || '',
+                        referralLimt: product.referralLimt || 0,
+                        isLocked: product.isLocked || false
                     });
 
                     if (product.imageUrl) {
@@ -99,9 +103,30 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         }));
     };
 
+    const handleSwitchChange = (checked: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            isLocked: checked
+        }));
+    };
+
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
+            const file = e.target.files[0];
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            const maxSize = 3 * 1024 * 1024;
+
+            if (!validTypes.includes(file.type)) {
+                toast.error('Invalid file type. Only JPG, JPEG, and PNG are allowed.');
+                return;
+            }
+
+            if (file.size > maxSize) {
+                toast.error('File size exceeds the maximum limit of 3MB.');
+                return;
+            }
+
+            setFile(file);
             e.target.value = '';
         }
     };
@@ -139,7 +164,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             name: '',
             price: '',
             category: '',
-            description: ''
+            referralLimt: 0,
+            description: '',
+            isLocked: false
         });
         setFile(null);
         setExistingImageUrl(null);
@@ -169,8 +196,10 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             const productFormData = new FormData();
             productFormData.append('name', formData.name);
             productFormData.append('price', formData.price);
+            productFormData.append('referralLimt', formData.referralLimt.toString());
             productFormData.append('category', formData.category);
             productFormData.append('description', formData.description);
+            productFormData.append('isLocked', formData.isLocked.toString());
 
             if (isEditMode && productId) {
                 productFormData.append('id', productId);
@@ -211,10 +240,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         }
     };
 
-    // Ensure body pointer-events are restored when dialog closes
     useEffect(() => {
-        // When dialog opens, the body gets pointer-events: none from Radix UI
-        // We need to clean this up when our component unmounts
+
         return () => {
             document.body.style.removeProperty('pointer-events');
         };
@@ -223,17 +250,19 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
     return (
         <Dialog
             open={isOpen}
+            modal={true}
             onOpenChange={(open) => {
                 if (!open) {
-                    // Ensure pointer-events are restored when dialog closes
+
                     document.body.style.pointerEvents = '';
                     handleDialogClose();
                 }
             }}
+
         >
-            <DialogContent className="w-[70vw] max-w-[90vw] sm:max-w-[90vw] max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
+            <DialogContent className="md:w-[70vw] max-w-[90vw] sm:max-w-[90vw] sm:w[90vw] max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-white">Add New Product</DialogTitle>
+                    <DialogTitle className="text-xl font-bold text-white">{isEditMode ? 'Edit Product' : 'Add New Product'}</DialogTitle>
                     <DialogDescription className="text-gray-400">
                         Fill in the details to create a new product listing
                     </DialogDescription>
@@ -259,14 +288,27 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
 
                                 <div>
                                     <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1">
-                                        Price ($)
+                                        Price (PKR)
                                     </label>
                                     <input
                                         type="number"
                                         id="price"
                                         className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="0.00"
+                                        placeholder="0"
                                         value={formData.price}
+                                        onChange={handleFormChange}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="referralLimt" className="block text-sm font-medium text-gray-300 mb-1">
+                                        Referral Limit
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="referralLimt"
+                                        className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                        placeholder="0"
+                                        value={formData.referralLimt}
                                         onChange={handleFormChange}
                                     />
                                 </div>
@@ -300,6 +342,18 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                         value={formData.description}
                                         onChange={handleFormChange}
                                     ></textarea>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="isLocked"
+                                        checked={formData.isLocked}
+                                        onCheckedChange={handleSwitchChange}
+                                    />
+                                    <label htmlFor="isLocked" className="text-sm font-medium text-gray-300 flex items-center">
+                                        <LockIcon size={16} className="mr-2" />
+                                        Lock Product (Prevents purchase)
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -363,7 +417,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                         <div className="flex flex-col items-center justify-center">
                                             <Image className="h-12 w-12 text-gray-400 mb-3" />
                                             <p className="text-sm text-gray-400 mb-2">Drag and drop image files</p>
-                                            <p className="text-xs text-gray-500 mb-3">PNG, JPG or GIF up to 5MB</p>
+                                            <p className="text-xs text-gray-500 mb-3">PNG, JPG up to 3MB</p>
                                             <Button type="button" variant="outline" size="sm" onClick={openFileDialog}>
                                                 Browse Files
                                             </Button>

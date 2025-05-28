@@ -2,48 +2,58 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { ArrowRight } from 'lucide-react'
+import Link from "next/link";
 
 interface ProductCardProps {
     id?: string | number;
     name: string;
     price: number;
-    image: string; // This can be either imageUrl from API or image from static data
+    image: string;
+    category?: string;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ id = "1", name, price, image }) => {
-    const router = useRouter();
+const ProductCard: React.FC<ProductCardProps> = ({ id = "1", name, price, image, category }) => {
+
     return (
-        <div className="rounded-xl overflow-hidden border border-purple/10 bg-gray-900/30 flex flex-col h-full transition-transform hover:scale-[1.02]">
-            <div className="h-36 sm:h-40 md:h-48 overflow-hidden relative">
-                <img 
-                    src={image} 
-                    alt={name} 
-                    className="w-full h-full object-cover transition-transform hover:scale-105" 
-                    onError={(e) => {
-                        // Fallback image if the provided image fails to load
-                        (e.target as HTMLImageElement).src = "/image (1).png";
-                    }}
+        <div className="group relative overflow-hidden rounded-xl product-card-gradient shadow-[0_4px_20px_rgba(123,97,255,0.15)] transition-all duration-300 hover:translate-y-[-4px] border border-[#32293d]">
+
+            <div className="w-full h-32 sm:h-36 md:h-40 overflow-hidden">
+                <img
+                    src={image}
+                    alt={name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
+
             </div>
-            <div className="p-3 sm:p-4 flex justify-between items-center">
-                <div>
-                    <h3 className="text-base sm:text-lg font-medium text-white truncate max-w-[120px] sm:max-w-[150px]">{name}</h3>
-                    <p className="text-xs sm:text-sm text-gray-400">Coins</p>
+
+            <div className="relative z-10 p-3 sm:p-4 flex flex-col">
+                <span className="inline-flex self-start text-xs font-medium px-2 py-0.5 rounded-full bg-[#302750] text-[#9b87f5] t mb-1 sm:mb-2">
+                    {category}
+                </span>
+
+                <Link href={`/product/${id}`} >
+                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-[#9b87f5] transition-colors">
+                        {name}
+                    </h3>
+                </Link>
+
+                <div className="mt-auto flex justify-between gap-2 ">
+                    <div className="flex items-center justify-center">
+                        <div className="price-badge text-white text-center font-bold text-sm sm:text-base px-2 py-1 rounded-lg w-fit">
+                            PKR {price}
+                        </div>
+                    </div>
+                    <Link href={`/product/${id}`} >
+                        <Button
+                            variant="ghost"
+                            className="text-[#9b87f5] hover:text-[#9b87f5] hover:bg-[#2B2244] group text-xs sm:text-sm p-1 sm:p-2"
+                        >
+                            View
+                            <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1   text[#9b87f5]" />
+                        </Button>
+                    </Link>
                 </div>
-                <div className="text-right">
-                    <p className="text-base sm:text-lg font-bold text-white">${price.toFixed(2)}</p>
-                    <p className="text-xs sm:text-sm text-gray-400">USD</p>
-                </div>
-            </div>
-            <div className="p-3 sm:p-4 mt-auto">
-                <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base py-1 sm:py-2"
-                    onClick={() => router.push(`/product/${id}`)}
-                >
-                    View Details
-                </Button>
             </div>
         </div>
     );

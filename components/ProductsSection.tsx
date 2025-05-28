@@ -64,6 +64,7 @@ const ProductsSection = ({ TopHeading, viewAll }: { TopHeading?: string, viewAll
                             name={product.name}
                             price={product.price}
                             image={product.imageUrl}
+                            category={product.category}
                         />
                     ))}
                 </div>

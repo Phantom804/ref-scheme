@@ -8,25 +8,26 @@ export interface IUser extends Document {
     isVerified: boolean;
     role: string;
     referralCode: string;
-    referredByCode: String;
+    referredByCode: string;
+    country: string;
+    totalEarning: number;
     isBlock: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
 
-// Mongoose document with _id property
-interface UserDocument extends Document {
-    _id: Schema.Types.ObjectId;
-}
+
 
 const UserSchema = new Schema<IUser>(
     {
         name: { type: String },
-        email: { type: String, unique: true },
+        email: { type: String},
         phoneNumber: { type: String, required: true },
         password: { type: String, required: true },
         referralCode: { type: String },
         referredByCode: { type: String },
+        country: { type: String },
+        totalEarning: { type: Number, default: 0 },
         isBlock: { type: Boolean, default: false },
         isVerified: { type: Boolean, default: false },
         role: { type: String, enum: ['user', 'admin', 'superAdmin'], default: 'user' },

@@ -50,6 +50,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        if (decoded.role !== "admin" && decoded.role !== "superAdmin") {
+            return NextResponse.json(
+                { success: false, message: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+
+
         const { accountTitle, accountNumber, bankName, logoUrl } = await req.json();
         if (!accountTitle || !accountNumber || !bankName) {
             return NextResponse.json(
@@ -99,6 +107,14 @@ export async function PUT(req: NextRequest) {
                 { status: 401 }
             );
         }
+
+        if (decoded.role !== "admin" && decoded.role !== "superAdmin") {
+            return NextResponse.json(
+                { success: false, message: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+
 
         const { id, accountTitle, accountNumber, bankName, logoUrl } = await req.json();
         if (!id || !accountTitle || !accountNumber || !bankName) {
@@ -163,8 +179,15 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
+        if (decoded.role !== "admin" && decoded.role !== "superAdmin") {
+            return NextResponse.json(
+                { success: false, message: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+
         await connectToDatabase();
-        const deletedPaymentMethod = await PaymentMethod.findOneAndDelete({ _id: id, userId: decoded.id });
+        const deletedPaymentMethod = await PaymentMethod.findOneAndDelete({ _id: id });
 
         if (!deletedPaymentMethod) {
             return NextResponse.json(

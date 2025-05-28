@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
 import { Order } from '@/lib/models/Order';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
 import { AppSetting } from '@/lib/models/AppSetting';
+import { Product } from '@/lib/models/Product';
+import { v2 as cloudinary } from 'cloudinary';
+
+
+
 
 // Configure Cloudinary
 cloudinary.config({
@@ -13,15 +17,15 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
         const userId = searchParams.get('userId') || '';
+
         const referralCode = searchParams.get('referralCode') || '';
-        const orderType = searchParams.get('orderType') || '';
+
         const skip = (page - 1) * limit;
 
         await connectToDatabase();
@@ -31,24 +35,17 @@ export async function GET(request: NextRequest) {
 
         // Filter by userId if provided
         if (userId) {
-            // For direct orders, filter by the user who made the purchase
-            if (orderType === 'bought') {
-                searchQuery.userId = userId;
-            }
-            // For reference orders, filter by the referral code matching the user's code
-            else if (orderType === 'reference') {
-                searchQuery.referralCode = referralCode;
-            }
+            searchQuery.userId = userId;
+
         }
 
 
         // Prepare the query pipeline
         let orderQuery = Order.find(searchQuery)
             .sort({ createdAt: -1 })
-            .populate('_id', 'name productCode');
+            .populate({ path: 'productId', select: 'referralLimt', strictPopulate: false });
 
-        // Execute the query for counting with product name filter
-        let allOrders = [];
+
 
         // We don't need product name filtering for user dashboard
         // Just get the total count and apply pagination
@@ -57,44 +54,63 @@ export async function GET(request: NextRequest) {
         // Apply pagination
         const orders = await orderQuery.skip(skip).limit(limit).exec();
 
+
         // Already handled pagination and counting above
 
         // Format the response based on order type
-        const formattedOrders = orders.map(order => {
+        const formattedOrders = await Promise.all(orders.map(async order => {
             // Base order data
             const baseOrder = {
-                id: order.id,
-                name: order.productId.name,
+                id: order._id,
+                productName: order.productName,
                 transactionId: order.transactionId,
                 quantity: order.quantity,
-                price: `$${order.price.toFixed(2)}`,
+                price: `PKR ${order.price}`,
                 boughtOn: order.createdAt.toLocaleDateString(),
                 status: order.status,
-                boughtBy: order.buyer || 'Unknown'
+
             };
 
-            // For reference orders, include additional fields
-            if (orderType === 'reference') {
-                return {
-                    ...baseOrder,
-                    commission: order.commission ? `$${order.commission.toFixed(2)}` : '$0.00'
-                };
+
+
+            let productIdValue = order.productId;
+            if (order.productId && typeof order.productId === 'object' && order.productId._id) {
+                productIdValue = order.productId._id;
             }
 
-            // For direct orders
+
+
+            let referralUsageCount = 0;
+            if (order.productId && order.productId._id) {
+                referralUsageCount = await Order.countDocuments({
+                    referralCode: { $exists: true, $eq: referralCode },
+                    productId: productIdValue,
+                    status: { $ne: 'Cancelled' }
+                });
+
+            }
+
+
+
+
             return {
                 ...baseOrder,
-                productCode: order.productId.productCode,
-                referralCode: order.referralCode || '-',
-                receiptUrl: order.receiptUrl
+                referralCode: order.referralCode || '',
+                productReferralLimit: order.productId?.referralLimt,
+                referralUsageCount
+
+
+
             };
-        });
+        }));
+
 
         return NextResponse.json({
             orders: formattedOrders,
             totalPages: Math.ceil(totalOrders / limit),
             currentPage: page,
             totalOrders
+
         });
 
     } catch (error) {
@@ -170,19 +186,37 @@ export async function POST(request: NextRequest) {
         const price = parseFloat(formData.get('price') as string);
         const referralCode = formData.get('referralCode') as string;
 
-        const userId = user.id;
+        const userId = user._id;
         const buyer = user.name;
 
 
+        if (referralCode && referralCode === user.referralCode) {
+            return NextResponse.json(
+                { success: false, message: 'You cannot use your own referral code.' },
+                { status: 400 }
+            );
+        }
+
+        if (referralCode) {
+            const previousOrderWithReferral = await Order.findOne({ userId: user._id, referralCode: referralCode });
+            // we need to check here 
+            if (previousOrderWithReferral) {
+                return NextResponse.json(
+                    { success: false, message: "You can only use referral code once, and you've already used it." },
+                    { status: 400 }
+                );
+            }
+        }
+        let commission;
+
         const totalPrice = quantity * price;
 
-        //only fetch referral comission from app settings
-        const commissionPercentage = await AppSetting.findOne({}, 'referralCommission').exec();
+        if (referralCode) {
+            //only fetch referral comission from app settings
+            const appSettings = await AppSetting.findOne({}, 'referralCommission').exec();
 
-
-
-        const commission = price - (price * commissionPercentage);
-
+            commission = Number((price * (appSettings.referralCommission / 100)).toFixed(2));
+        }
 
 
         // Validate required fields
@@ -195,9 +229,9 @@ export async function POST(request: NextRequest) {
 
         // Validate file type
         const fileType = receipt.type;
-        if (!['image/jpeg', 'image/png'].includes(fileType)) {
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(fileType)) {
             return NextResponse.json(
-                { success: false, message: 'Only JPEG and PNG formats are supported' },
+                { success: false, message: 'Only JPG and PNG formats are supported' },
                 { status: 400 }
             );
         }
@@ -244,12 +278,13 @@ export async function POST(request: NextRequest) {
             productName,
             transactionId,
             quantity,
-            commission,
+            ...(commission ? { commission } : {}),
             ...(referralCode ? { referralCode } : {}),
             price: totalPrice,
             status: 'Pending',
             receiptUrl: (uploadResult as any).secure_url,
         });
+
 
         return NextResponse.json({
             success: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { Order } from '@/lib/models/Order';
+import { User } from '@/lib/models/User';
 import { Product } from '@/lib/models/Product';
 
 export async function GET(request: NextRequest) {
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
         const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
         const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
         const orderType = searchParams.get('orderType') || '';
+        const showCancelledOrders = searchParams.get('showCancelledOrders') === 'true';
+        const showCompletedOrders = searchParams.get('showCompletedOrders') === 'true'; // Read new filter
         const skip = (page - 1) * limit;
 
         await connectToDatabase();
@@ -21,15 +24,37 @@ export async function GET(request: NextRequest) {
         // Build search query
         const searchQuery: any = {};
 
+        // Default to showing only Pending orders unless specific filters are applied
+        if (!showCancelledOrders && !showCompletedOrders) {
+            searchQuery.status = 'Pending';
+        } else {
+            // If either filter is true, build an $in array for status
+            const statusesToInclude = [];
+            if (showCancelledOrders) {
+                statusesToInclude.push('Cancelled');
+            }
+            if (showCompletedOrders) {
+                statusesToInclude.push('Completed');
+            }
+            // Only include statuses that are explicitly requested
+            if (statusesToInclude.length > 0) {
+                searchQuery.status = { $in: statusesToInclude };
+            } else {
+
+                searchQuery.status = 'Pending';
+            }
+        }
+
         // General search
         if (search) {
             searchQuery.$or = [
                 { transactionId: { $regex: search, $options: 'i' } },
                 { referralCode: { $regex: search, $options: 'i' } },
+                { buyer: { $regex: search, $options: 'i' } },
             ];
         }
 
-        // Specific filters
+
         if (referralCode) {
             searchQuery.referralCode = { $regex: referralCode, $options: 'i' };
         }
@@ -42,8 +67,6 @@ export async function GET(request: NextRequest) {
             // Reference orders have referral codes
             searchQuery.referralCode = { $exists: true };
         }
-
-        // We'll handle product name filter during the query with populate
 
         // Price range filter
         if (minPrice !== undefined || maxPrice !== undefined) {
@@ -64,15 +87,15 @@ export async function GET(request: NextRequest) {
         // Execute the query for counting with product name filter
         let allOrders = [];
 
-        // If product name filter is applied, we need to get all matching orders first
+
         if (productName) {
             allOrders = await orderQuery.exec();
 
             // Filter by product name
             allOrders = allOrders.filter(order =>
                 order.productId &&
-                order.productId.name &&
-                order.productId.name.toLowerCase().includes(productName.toLowerCase())
+                order.productName &&
+                order.productName.toLowerCase().includes(productName.toLowerCase())
             );
 
             // Get total count after filtering
@@ -83,13 +106,15 @@ export async function GET(request: NextRequest) {
 
             // Format the response
             const formattedOrders = paginatedOrders.map(order => ({
-                id: order.id,
-                name: order.productId.name,
+                id: order._id,
+                productName: order.productName,
+                buyer: order.buyer,
                 transactionId: order.transactionId,
-                productCode: order.productId.productCode,
+                productID: order.productId,
                 quantity: order.quantity,
                 referralCode: order.referralCode,
-                price: `$${order.price.toFixed(2)}`,
+                commission: `PKR ${order.commission}`,
+                price: `PKR ${order.price}`,
                 boughtOn: order.createdAt.toLocaleDateString(),
                 status: order.status,
                 receiptUrl: order.receiptUrl
@@ -111,13 +136,15 @@ export async function GET(request: NextRequest) {
 
         // Format the response
         const formattedOrders = orders.map(order => ({
-            id: order.id,
-            name: order.productId.name,
+            id: order._id,
+            productName: order.productName,
+            buyer: order.buyer,
             transactionId: order.transactionId,
-            productCode: order.productId.productCode,
+            productId: order.productId,
             quantity: order.quantity,
             referralCode: order.referralCode,
-            price: `$${order.price.toFixed(2)}`,
+            commission: `PKR ${order.commission}`,
+            price: `PKR ${order.price}`,
             boughtOn: order.createdAt.toLocaleDateString(),
             status: order.status,
             receiptUrl: order.receiptUrl
@@ -151,11 +178,30 @@ export async function PATCH(request: NextRequest) {
             { new: true }
         );
 
+
+
         if (!order) {
             return NextResponse.json(
                 { error: 'Order not found' },
                 { status: 404 }
             );
+        }
+
+        // If status is changed to Completed and there's a referral code, update user's total earnings
+        if (status === 'Completed' && order.referralCode) {
+            // Find the user with this referral code
+            const user = await User.findOne({ referralCode: order.referralCode });
+
+            if (user && order.commission) {
+                // Convert commission to number and add to user's total earnings
+                const commissionAmount = parseFloat(order.commission);
+                if (!isNaN(commissionAmount)) {
+                    await User.findByIdAndUpdate(
+                        user._id,
+                        { $inc: { totalEarning: commissionAmount } }
+                    );
+                }
+            }
         }
 
         return NextResponse.json({

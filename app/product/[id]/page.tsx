@@ -1,53 +1,35 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import ProductsSection from '@/components/ProductsSection';
+import ClientProductSection from '@/components/ClientProductSection';
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import LineChart from "@/components/charts/LineChart";
+import ProductLockPanel from "@/components/ProductLockPanel";
 import PaymentCard from "@/components/PaymentCard";
 import { useParams } from "next/navigation";
 import { toast } from 'sonner'
+import { format } from "date-fns";
 
-// const priceData = [
-//     { month: "Jan", price: 2400 },
-//     { month: "Feb", price: 2200 },
-//     { month: "Mar", price: 3200 },
-//     { month: "Apr", price: 2800 },
-//     { month: "May", price: 4300 },
-//     { month: "Jun", price: 3900 },
-//     { month: "Jul", price: 3200 },
-//     { month: "Aug", price: 5100 },
-//     { month: "Sep", price: 4800 },
-//     { month: "Oct", price: 5300 },
-//     { month: "Nov", price: 3000 },
-//     { month: "Dec", price: 4200 }
-// ];
-// type Range = 'yearly' | '6months' | 'monthly' | 'daily';
 
-interface PriceHistoryItem {
-    price: number;
-    date: string;
-}
+
 interface Product {
     id: string;
     description: string;
     name: string;
     productCode: string;
     price: number;
+    isLocked?: boolean;
     imageUrl: string;
     category: string;
+    createdAt: Date;
+
 }
 
 export default function ProductDetail() {
 
-
-
-    const router = useRouter();
     const { id } = useParams();
+
     const PRODUCT_ID = id;
 
 
@@ -55,21 +37,24 @@ export default function ProductDetail() {
     const [product, setProduct] = useState<Product | null>(null);
 
     const [loading, setLoading] = useState(false);
-    const [selectedRange, setSelectedRange] = useState<'yearly' | '6months' | 'monthly' | 'daily'>('yearly');
+    const [selectedRange, setSelectedRange] = useState<'yearly' | '6months' | 'monthly'>('yearly');
 
     useEffect(() => {
         const fetchProduct = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/productdetail?productId=${PRODUCT_ID}`);
+                const res = await fetch(`/api/products/detail?id=${PRODUCT_ID}`);
                 if (!res.ok) {
                     throw new Error('Failed to fetch product');
                 }
+                if (res.status === 400) {
+                    toast.warning('Bad request. Use a valid product Link.');
+                }
                 const data = await res.json();
+
                 setProduct(data);
             } catch (error) {
-                console.error('Error fetching products:', error);
-                toast.error('Failed to load products. Please try again.');
+                toast.error('Failed to load product. Please try again.');
             } finally {
                 setLoading(false);
             }
@@ -77,12 +62,11 @@ export default function ProductDetail() {
         if (PRODUCT_ID) fetchProduct();
     }, [PRODUCT_ID]);
 
-    const fetchPriceData = async (range: 'yearly' | '6months' | 'monthly' | 'daily') => {
+    const fetchPriceData = async (range: 'yearly' | '6months' | 'monthly') => {
         const res = await fetch(`/api/price-history?productId=${PRODUCT_ID}&range=${range}`);
         const data = await res.json();
-        console.log("prize graph data :");
-        console.log(data);
-        setPriceData(data); // used in <LineChart data={priceData} />
+
+        setPriceData(data);
     };
 
 
@@ -98,7 +82,7 @@ export default function ProductDetail() {
             {loading ? (
                 <div className="flex justify-center items-center py-8 sm:py-10 px-4">
                     <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-purple-500" />
-                    <span className="ml-2 text-sm sm:text-base text-gray-400">Loading orders...</span>
+                    <span className="ml-2 text-sm sm:text-base text-gray-400">Loading...</span>
                 </div>
             ) : (
 
@@ -115,8 +99,8 @@ export default function ProductDetail() {
                                     <div className="text-xl sm:text-2xl font-semibold text-white flex gap-2 items-center">
                                         {product?.name}
                                     </div>
-                                    <div className="text-xs sm:text-sm text-gray-400 mt-1">Listed on 20 Aug, 2025</div>
-                                    <div className="mt-2 sm:mt-3 text-white text-2xl sm:text-3xl font-bold">${product?.price} <span className="text-sm sm:text-base font-medium bg-gray-700/40 rounded px-2 py-1 ml-2 text-blue-200">Current Price</span></div>
+                                    <div className="text-xs sm:text-sm text-gray-400 mt-1">{product?.createdAt ? `Listed on ${format(new Date(product.createdAt), 'dd MMM, yyyy')}` : 'Date unavailable'} </div>
+                                    <div className="mt-2 sm:mt-3 text-white text-2xl sm:text-3xl font-bold">PKR {product?.price} <span className="text-sm sm:text-base font-medium bg-gray-700/40 rounded px-2 py-1 ml-2 text-blue-200">Current Price</span></div>
                                 </div>
                             </div>
 
@@ -128,12 +112,12 @@ export default function ProductDetail() {
                                 </p>
                             </div>
 
-                            {/* Price Graph */}
+                            {/* Price Ggraph */}
                             <div className="bg-[#241e34] rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                                     <span className="text-white font-bold text-lg">Price Graph</span>
                                     <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                                        {['yearly', '6months', 'monthly', 'daily'].map((range) => (
+                                        {['yearly', '6months', 'monthly'].map((range) => (
                                             <button
                                                 key={range}
                                                 onClick={() => setSelectedRange(range as any)}
@@ -159,17 +143,24 @@ export default function ProductDetail() {
                                 </div>
                             </div>
                         </div>
-                        {/* Buy Now */}
-                        <PaymentCard id={product?.id} productName={product?.name} price={product?.price} productCode={product?.productCode} />
+                        {product?.isLocked ? (
+                            <ProductLockPanel />
+                        ) : (
+
+                            <PaymentCard id={product?.id} productName={product?.name} price={product?.price} productCode={product?.productCode} />
+                        )
+                        }
+
 
 
                     </div>
                     <div className="px-4 sm:px-6">
-                        <ProductsSection TopHeading="Our Products" viewAll={false} />
+                        <ClientProductSection TopHeading="Suggested Products" viewAll={false} />
                     </div>
                 </div>
 
             )}
+
 
 
         </>

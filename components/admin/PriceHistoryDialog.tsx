@@ -5,10 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface PriceHistoryItem {
@@ -58,12 +59,24 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                 setDate(new Date(data[0].date));
             }
         } catch (error) {
-            console.error('Error fetching price history:', error);
+
             toast.error('Failed to load price history');
         } finally {
             setLoading(false);
         }
     };
+
+    const handleCalendarChange = (
+        _value: string | number,
+        _e: React.ChangeEventHandler<HTMLSelectElement>
+    ) => {
+        const _event = {
+            target: {
+                value: String(_value),
+            },
+        } as React.ChangeEvent<HTMLSelectElement>
+        _e(_event)
+    }
 
     const handleSelectChange = (value: string) => {
         setSelectedHistoryId(value);
@@ -94,11 +107,14 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                     }),
                 });
 
+                const data = await response.json();
                 if (!response.ok) {
-                    throw new Error('Failed to add price history');
+                    toast.warning(data.message || "Failed to add price history");
                 }
 
-                toast.success('Price history added successfully');
+                if (response.ok) {
+                    toast.success('Price history added successfully');
+                }
             } else {
                 // Update existing price history entry
                 const response = await fetch('/api/admin/price-history', {
@@ -142,10 +158,37 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
         resetForm();
     };
 
+    const handleDelete = async () => {
+        if (!selectedHistoryId) {
+            toast.error('Please select a price history entry to delete');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const response = await fetch(`/api/admin/price-history?id=${selectedHistoryId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete price history');
+            }
+
+            toast.success('Price history deleted successfully');
+            await fetchPriceHistory();
+            setSelectedHistoryId('');
+            setPrice('');
+            setDate(new Date());
+        } catch (error) {
+            console.error('Error deleting price history:', error);
+            toast.error('Failed to delete price history');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     // Ensure body pointer-events are restored when dialog closes
     useEffect(() => {
-        // When dialog opens, the body gets pointer-events: none from Radix UI
-        // We need to clean this up when our component unmounts
         return () => {
             document.body.style.removeProperty('pointer-events');
         };
@@ -177,7 +220,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                 {loading ? (
                     <div className="flex justify-center items-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
-                        <span className="ml-2">Loading price history...</span>
+                        <span className="ml-2 text-white ">Loading price history...</span>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -186,43 +229,49 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                                 <label htmlFor="history-select" className="text-sm font-medium text-white">
                                     Select Date
                                 </label>
-                                <Select value={selectedHistoryId} onValueChange={handleSelectChange}>
-                                    <SelectTrigger className='text-white'>
-                                        <SelectValue placeholder="Select a date " />
-                                    </SelectTrigger>
-                                    <SelectContent className='text-white'>
-                                        {priceHistory.map((item) => (
-                                            <SelectItem className='text-white' key={item._id} value={item._id}>
-                                                {format(new Date(item.date), 'PPP')}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex gap-2">
+                                    <Select value={selectedHistoryId} onValueChange={handleSelectChange}>
+                                        <SelectTrigger className='text-white'>
+                                            <SelectValue placeholder="Select a date " />
+                                        </SelectTrigger>
+                                        <SelectContent className='text-white'>
+                                            {priceHistory.map((item) => (
+                                                <SelectItem className='text-white' key={item._id} value={item._id}>
+                                                    {format(new Date(item.date), 'PPP')}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleDelete}
+                                        disabled={!selectedHistoryId || submitting}
+                                        className="bg-white"
+                                    >
+                                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
                         {mode === 'add' && (
-                            <div className="space-y-2">
-                                <label htmlFor="date-picker" className="text-sm font-medium text-white">
-                                    Date
-                                </label>
+                            <div>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
-                                            className="w-full justify-start text-left font-normal"
+                                            className={cn(
+                                                "w-[240px] justify-start text-left font-normal",
+                                                !date && "text-muted-foreground"
+                                            )}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={date}
-                                            onSelect={setDate}
-                                            initialFocus
-                                        />
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={date} onSelect={setDate} autoFocus />
                                     </PopoverContent>
                                 </Popover>
                             </div>
@@ -273,3 +322,5 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
 };
 
 export default PriceHistoryDialog;
+
+
