@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import {
     LogOut,
@@ -58,7 +59,13 @@ const Navbar = () => {
                 className="text-white text-2xl sm:text-3xl font-extrabold tracking-wide select-none cursor-pointer"
                 onClick={() => router.push("/")}
             >
-                LOGO
+                <Image
+                    src="/cashvibe.png"
+                    alt="Logo"
+                    width={120}
+                    height={40}
+                    priority
+                />
             </div>
 
 

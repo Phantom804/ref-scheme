@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 function ProductLockPanel() {
     return (
-        <div className="bg-gradient-to-br max-w-[40vw] from-red-900/20 to-red-950/40 rounded-2xl p-8 border border-red-800/30 backdrop-blur-sm">
+        <div className="bg-gradient-to-br w-full md:max-w-sm from-red-900/20 to-red-950/40 rounded-2xl p-8 border border-red-800/30 backdrop-blur-sm">
             <div className="text-center space-y-6">
 
                 <div className="relative mx-auto w-20 h-20 flex items-center justify-center">

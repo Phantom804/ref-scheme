@@ -2,6 +2,7 @@ import Withdraw from '@/lib/models/Withdraw';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@/lib/models/User';
+import { AppSetting } from '@/lib/models/AppSetting';
 
 
 export async function GET(request: NextRequest) {
@@ -80,6 +81,16 @@ export async function POST(request: NextRequest) {
                 { success: false, message: 'All fields are required' },
                 { status: 400 }
             );
+        }
+
+        const withdrawSettings = await AppSetting.findOne({}, 'withdrawLimit').exec();
+        const withdrawLimit = withdrawSettings?.withdrawLimit;
+        if (withdrawLimit < amount) {
+            return NextResponse.json(
+                { success: false, message: 'Withdraw amount exceeds the limit' },
+                { status: 400 }
+            );
+
         }
 
         // Find user and check if they have sufficient balance

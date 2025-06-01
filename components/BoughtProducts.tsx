@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
+import { Loader2, Truck } from "lucide-react";
 import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/Pagination';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import DeliveryRequestDialog from './DeliveryRequestDialog';
 
 
 
@@ -21,6 +23,8 @@ interface Product {
     price: string;
     boughtOn: string;
     status: "Pending" | "Completed" | "Cancelled";
+    deliveryRequested: boolean;
+    deliveryStatus: 'Pending' | 'In Transit' | 'Delivered';
 }
 
 interface OrdersResponse {
@@ -38,6 +42,8 @@ function BoughtProducts() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalOrders, setTotalOrders] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<Product | null>(null);
 
 
     useEffect(() => {
@@ -79,12 +85,67 @@ function BoughtProducts() {
         fetchOrders(page);
     };
 
+    // Handle delivery request
+    const handleDeliveryRequest = (order: Product) => {
+        setSelectedOrder(order);
+        setIsDeliveryDialogOpen(true);
+    };
+
+    // Submit delivery request
+    const handleDeliverySubmit = async (deliveryDetails: any) => {
+        console.log("request data to delivery api: ", deliveryDetails);
+        try {
+            setLoading(true);
+            const response = await fetch('/api/orders/delivery', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId: selectedOrder?.id,
+                    deliveryDetails
+                }),
+            });
+
+            const data = await response.json();
+            console.log("response from delivery api: ", data);
+
+            if (response.ok) {
+                toast.success('Delivery request submitted successfully');
+                setIsDeliveryDialogOpen(false);
+                // Update the product in the list
+                setProducts(products.map(product =>
+                    product.id === selectedOrder?.id
+                        ? { ...product, deliveryRequested: true, deliveryStatus: 'Pending' }
+                        : product
+                ));
+            } else {
+                toast.error(data.message || 'Failed to submit delivery request');
+            }
+        } catch (error) {
+            console.error('Error submitting delivery request:', error);
+            toast.error('An error occurred while submitting your delivery request');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Initial data fetch
     useEffect(() => {
         fetchOrders();
     }, []);
     return (
         <div className="bg-[#1A1F2C] rounded-lg overflow-hidden">
+            {/* Delivery Request Dialog */}
+            {selectedOrder && (
+                <DeliveryRequestDialog
+                    open={isDeliveryDialogOpen}
+                    onOpenChange={setIsDeliveryDialogOpen}
+                    onSubmit={handleDeliverySubmit}
+                    loading={loading}
+                    order={selectedOrder}
+                />
+            )}
             <div className="overflow-x-auto">
 
                 {loading ? (
@@ -108,13 +169,13 @@ function BoughtProducts() {
                                 <TableHead className="text-gray-400">Price</TableHead>
                                 <TableHead className="text-gray-400">Bought On</TableHead>
                                 <TableHead className="text-gray-400">Status</TableHead>
+                                <TableHead className="text-gray-400">Delivery</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {products.map((product) => (
                                 <TableRow key={product.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
                                     <TableCell>
-
                                         {product.productName}
                                     </TableCell>
                                     <TableCell>{product.transactionId}</TableCell>
@@ -131,6 +192,34 @@ function BoughtProducts() {
                                                     ? "default"
                                                     : "secondary"
                                         } className=''>{product.status}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {product.status === "Completed" ? (
+                                            product.deliveryRequested ? (
+                                                <Badge variant={
+                                                    product.deliveryStatus === "Delivered"
+                                                        ? "secondary"
+                                                        : product.deliveryStatus === "In Transit"
+                                                            ? "default"
+                                                            : "default"
+                                                } className="flex items-center gap-1">
+                                                    <Truck className="h-3 w-3" />
+                                                    {product.deliveryStatus}
+                                                </Badge>
+                                            ) : (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex items-center gap-1 text-xs"
+                                                    onClick={() => handleDeliveryRequest(product)}
+                                                >
+                                                    <Truck className="h-3 w-3" />
+                                                    Request Delivery
+                                                </Button>
+                                            )
+                                        ) : (
+                                            <span className="text-gray-500 text-xs">Not Available</span>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}

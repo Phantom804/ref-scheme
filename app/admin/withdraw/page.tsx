@@ -310,6 +310,7 @@ const Withdraw: React.FC = () => {
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-b border-[#2A2F3E]">
                                     <TableHead className="text-gray-400">User</TableHead>
+                                    <TableHead className="text-gray-400">User Phone</TableHead>
                                     <TableHead className="text-gray-400">Amount</TableHead>
                                     <TableHead className="text-gray-400">Account Title</TableHead>
                                     <TableHead className="text-gray-400">Account Number</TableHead>

@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
         const name = formData.get('name') as string;
         const price = parseFloat(formData.get('price') as string);
         const referralLimt = parseInt(formData.get('referralLimt') as string);
+        const referralCommission = parseFloat(formData.get('referralCommission') as string);
         const category = formData.get('category') as string;
         const description = formData.get('description') as string;
         const imageFile = formData.get('image') as File;
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
             price,
             category,
             referralLimt,
+            referralCommission,
             description,
             imageUrl,
             productCode,
@@ -179,6 +181,7 @@ export async function PATCH(request: NextRequest) {
         const name = formData.get('name') as string;
         const price = parseFloat(formData.get('price') as string);
         const referralLimt = parseInt(formData.get('referralLimt') as string);
+        const referralCommission = parseFloat(formData.get('referralCommission') as string);
         const category = formData.get('category') as string;
         const description = formData.get('description') as string;
         const imageFile = formData.get('image') as File;
@@ -216,6 +219,7 @@ export async function PATCH(request: NextRequest) {
             name,
             price,
             referralLimt,
+            referralCommission,
             category,
             description,
             imageUrl,

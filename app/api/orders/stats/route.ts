@@ -54,10 +54,21 @@ export async function GET(
                 }
             },
             {
+                $lookup: {
+                    from: 'products',
+                    localField: 'productId',
+                    foreignField: '_id',
+                    as: 'product'
+                }
+            },
+            {
+                $unwind: '$product'
+            },
+            {
                 $group: {
                     _id: null,
                     count: { $sum: 1 },
-                    totalPrice: { $sum: '$price' } // Removed { $toDouble: '$price' } as price is already a Number
+                    totalPrice: { $sum: { $multiply: ['$product.price', '$quantity'] } }
                 }
             }
         ]);

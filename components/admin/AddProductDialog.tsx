@@ -33,6 +33,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         category: '',
         description: '',
         referralLimt: 0,
+        referralCommission: 0,
         isLocked: false
     });
     const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
@@ -56,6 +57,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                         category: product.category,
                         description: product.description || '',
                         referralLimt: product.referralLimt || 0,
+                        referralCommission: product.referralCommission || 0,
                         isLocked: product.isLocked || false
                     });
 
@@ -165,6 +167,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             price: '',
             category: '',
             referralLimt: 0,
+            referralCommission: 0,
             description: '',
             isLocked: false
         });
@@ -197,6 +200,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             productFormData.append('name', formData.name);
             productFormData.append('price', formData.price);
             productFormData.append('referralLimt', formData.referralLimt.toString());
+            productFormData.append('referralCommission', formData.referralCommission.toString());
             productFormData.append('category', formData.category);
             productFormData.append('description', formData.description);
             productFormData.append('isLocked', formData.isLocked.toString());
@@ -309,6 +313,20 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                         className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                                         placeholder="0"
                                         value={formData.referralLimt}
+                                        onChange={handleFormChange}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="referralCommission" className="block text-sm font-medium text-gray-300 mb-1">
+                                        Referral Commission
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="referralCommission"
+                                        className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                        placeholder="0"
+                                        value={formData.referralCommission}
                                         onChange={handleFormChange}
                                     />
                                 </div>

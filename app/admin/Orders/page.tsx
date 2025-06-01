@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Filter, Loader2 } from 'lucide-react';
+import { DeliveryDetailsSheet } from '@/components/admin/DeliveryDetailsSheet';
+
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,6 +31,11 @@ interface Order {
     boughtOn: string;
     status: "Pending" | "Completed" | "Cancelled";
     receiptUrl: string;
+    deliveryRequested: boolean;
+    deliveryStatus: "Pending" | "In Transit" | "Delivered";
+    deliveryDate: string;
+    deliveryAddress: string;
+    deliveryContactPhone: string;
 }
 
 interface OrdersResponse {
@@ -47,7 +54,6 @@ const Orders: React.FC = () => {
     const [totalOrders, setTotalOrders] = useState(0);
     const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
     const [showFilters, setShowFilters] = useState(false);
-    const [activeTab, setActiveTab] = useState<'direct' | 'reference' | ''>('direct');
     const [filters, setFilters] = useState({
         referralCode: '',
         minPrice: 0,
@@ -59,17 +65,14 @@ const Orders: React.FC = () => {
 
 
     // Fetch orders from API
-    const fetchOrders = async (page = currentPage, search = searchTerm, currentFilters = filters, orderTypeParam = activeTab) => {
+    const fetchOrders = async (page = currentPage, search = searchTerm, currentFilters = filters) => {
         try {
             setLoading(true);
 
             // Build query string with all filters
             let queryString = `/api/admin/orders?page=${page}&limit=${ordersPerPage}`;
 
-            // Add order type filter
-            if (orderTypeParam) {
-                queryString += `&orderType=${orderTypeParam}`;
-            }
+
 
             if (search) {
                 queryString += `&search=${encodeURIComponent(search)}`;
@@ -258,12 +261,7 @@ const Orders: React.FC = () => {
         }
     };
 
-    // Handle tab change
-    const handleTabChange = (tab: 'direct' | 'reference') => {
-        setActiveTab(tab);
-        fetchOrders(1, searchTerm, filters, tab);
-        setCurrentPage(1);
-    };
+
 
     // Initial data fetch
     useEffect(() => {
@@ -283,26 +281,7 @@ const Orders: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-white">Orders</h1>
                     <p className="text-gray-400">Manage orders and track transactions</p>
-                    <div className="flex justify-between items-center mt-1 mb-8">
-                        <div className="flex gap-2 bg-[#1A1F2C] rounded-lg p-1">
-                            <Button
-                                variant="ghost"
-                                className={`rounded-md px-6 py-2 ${activeTab === 'direct' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                                onClick={() => handleTabChange('direct')}
-                            >
-                                Direct
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className={`rounded-md px-6 py-2 ${activeTab === 'reference' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                                onClick={() => handleTabChange('reference')}
-                            >
-                                Reference
-                            </Button>
 
-                        </div>
-
-                    </div>
                 </div>
             </div>
 
@@ -435,13 +414,9 @@ const Orders: React.FC = () => {
                                     <TableHead className="text-gray-400">Transaction ID</TableHead>
                                     <TableHead className="text-gray-400">Product ID</TableHead>
                                     <TableHead className="text-gray-400">Quantity</TableHead>
-                                    {activeTab === 'reference' && (
-                                        <TableHead className="text-gray-400">Referral Code</TableHead>
-                                    )}
-                                    {activeTab === 'reference' && (
-                                        <TableHead className="text-gray-400">Commission</TableHead>
-                                    )}
 
+                                    <TableHead className="text-gray-400">Commission</TableHead>
+                                    <TableHead className="text-gray-400">Referral Code</TableHead>
                                     <TableHead className="text-gray-400">Price</TableHead>
                                     <TableHead className="text-gray-400">Bought On</TableHead>
                                     <TableHead className="text-gray-400">Status</TableHead>
@@ -452,19 +427,29 @@ const Orders: React.FC = () => {
                             <TableBody>
                                 {orders.map((order) => (
                                     <TableRow key={order.id} className="hover:bg-[#1F2937]/5 border-b border-[#2A2F3E]">
-                                        <TableCell className="text-white">
-                                            {order.buyer}
+                                        <TableCell className="text-green-400">
+                                            <div className='flex align-center gap-2'>
+                                                {order.deliveryRequested && (
+                                                    <DeliveryDetailsSheet
+                                                        orderId={order.id}
+                                                        deliveryStatus={order.deliveryStatus}
+                                                        deliveryDate={order.deliveryDate}
+                                                        deliveryAddress={order.deliveryAddress}
+                                                        deliveryContactPhone={order.deliveryContactPhone}
+                                                        onStatusUpdate={() => fetchOrders(currentPage, searchTerm, filters)}
+                                                    />
+                                                )}
+                                                <span
+                                                    className="text-white"> {order.buyer}</span>
+
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-white">{order.transactionId}</TableCell>
                                         <TableCell className="text-white">{order.productId}</TableCell>
                                         <TableCell className="text-white">{order.quantity}</TableCell>
-                                        {activeTab === 'reference' && (
-                                            <TableCell className="text-white">{order.referralCode}</TableCell>
-                                        )}
-                                        {activeTab === 'reference' && (
-                                            <TableCell className="text-white">{order.commission}</TableCell>
-                                        )}
 
+                                        <TableCell className="text-white">{order.commission}</TableCell>
+                                        <TableCell className="text-white">{order.referralCode}</TableCell>
                                         <TableCell className="text-[#3B82F6]">{order.price}</TableCell>
                                         <TableCell className="text-white">{order.boughtOn}</TableCell>
                                         <TableCell>

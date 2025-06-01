@@ -3,9 +3,9 @@ import { Order } from '@/lib/models/Order';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
-import { AppSetting } from '@/lib/models/AppSetting';
 import { Product } from '@/lib/models/Product';
 import { v2 as cloudinary } from 'cloudinary';
+import mongoose from 'mongoose';
 
 
 
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         // Prepare the query pipeline
         let orderQuery = Order.find(searchQuery)
             .sort({ createdAt: -1 })
-            .populate({ path: 'productId', select: 'referralLimt', strictPopulate: false });
+            .populate({ path: 'productId', select: 'referralLimt price', strictPopulate: false });
 
 
 
@@ -65,10 +65,11 @@ export async function GET(request: NextRequest) {
                 productName: order.productName,
                 transactionId: order.transactionId,
                 quantity: order.quantity,
-                price: `PKR ${order.price}`,
+                price: `PKR ${order.productId?.price}`,
                 boughtOn: order.createdAt.toLocaleDateString(),
                 status: order.status,
-
+                deliveryRequested: order.deliveryRequested || false,
+                deliveryStatus: order.deliveryStatus || '',
             };
 
 
@@ -187,7 +188,7 @@ export async function POST(request: NextRequest) {
         const referralCode = formData.get('referralCode') as string;
 
         const userId = user._id;
-        const buyer = user.name;
+        const buyer = user.phoneNumber;
 
 
         if (referralCode && referralCode === user.referralCode) {
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (referralCode) {
-            const previousOrderWithReferral = await Order.findOne({ userId: user._id, referralCode: referralCode });
+            const previousOrderWithReferral = await Order.findOne({ userId: user._id, referralCode: referralCode, productId: productId });
             // we need to check here 
             if (previousOrderWithReferral) {
                 return NextResponse.json(
@@ -208,14 +209,14 @@ export async function POST(request: NextRequest) {
             }
         }
         let commission;
-
+        productId
         const totalPrice = quantity * price;
 
         if (referralCode) {
             //only fetch referral comission from app settings
-            const appSettings = await AppSetting.findOne({}, 'referralCommission').exec();
+            const refSettings = await Product.findOne({ _id: productId }, 'referralCommission').exec();
 
-            commission = Number((price * (appSettings.referralCommission / 100)).toFixed(2));
+            commission = Number((price * (refSettings.referralCommission / 100)).toFixed(2));
         }
 
 
@@ -290,7 +291,7 @@ export async function POST(request: NextRequest) {
             success: true,
             message: 'Order Placed successfully',
             totalPrice: newOrder.price,
-            buyer: user.name,
+            buyer,
             transactionId,
         });
     } catch (error) {

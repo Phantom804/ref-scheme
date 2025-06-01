@@ -92,14 +92,15 @@ export async function POST(req: NextRequest) {
         {
             $lookup: {
                 from: 'orders',
-                let: { currentUserId: new ObjectId(decoded.id) },
+                let: { currentUserId: new ObjectId(decoded.id), referralCode: referralCode, productId: new ObjectId(productId) },
                 pipeline: [
                     {
                         $match: {
                             $expr: {
                                 $and: [
                                     { $eq: ['$userId', '$$currentUserId'] },
-                                    { $ne: ['$referralCode', null] }
+                                    { $eq: ['$productId', '$$productId'] },
+                                    { $eq: ['$referralCode', '$$referralCode'] }
                                 ]
                             }
                         }
@@ -152,10 +153,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: 'Referral limit for this product has been reached.' }, { status: 400 });
     }
 
-    // Check if the current user has already used a referral code for any product
+    // Check if the current user has already used a referral code for a product
     if (user.hasCurrentUserUsedReferral) {
         return NextResponse.json(
-            { success: false, message: "You can only use a referral code once, and you've already used it." },
+            { success: false, message: "You can only use a referral code once for a product." },
             { status: 400 }
         );
     }

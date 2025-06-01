@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, Settings, Package, ChevronRight, CreditCard, ShoppingBag, Group, Menu, Wallet } from 'lucide-react';
@@ -17,13 +17,58 @@ import { Button } from "@/components/ui/button";
 
 const AdminSidebar = () => {
     const [collapsed, setCollapsed] = useState(false);
+    const [hasPendingOrders, setHasPendingOrders] = useState(false);
+    const [hasPendingWithdrawals, setHasPendingWithdrawals] = useState(false);
     const pathname = usePathname();
 
+    useEffect(() => {
+        // Check for pending orders
+        const checkPendingOrders = async () => {
+            try {
+                const response = await fetch('/api/admin/orders?page=1&limit=1');
+                const data = await response.json();
+                setHasPendingOrders(data.totalOrders > 0);
+            } catch (error) {
+                console.error('Error checking pending orders:', error);
+            }
+        };
+
+        // Check for pending withdrawals
+        const checkPendingWithdrawals = async () => {
+            try {
+                const response = await fetch('/api/admin/withdraw?page=1&limit=1');
+                const data = await response.json();
+                setHasPendingWithdrawals(data.totalWithdrawals > 0);
+            } catch (error) {
+                console.error('Error checking pending withdrawals:', error);
+            }
+        };
+        setTimeout(() => {
+            checkPendingOrders();
+            checkPendingWithdrawals();
+
+        }, 2000);
+        // Set up interval to check periodically (every 5 minutes)
+        const intervalId = setInterval(() => {
+            checkPendingOrders();
+            checkPendingWithdrawals();
+        }, 5 * 60 * 1000);
+
+        return () => clearInterval(intervalId);
+    }, []);
 
     const navItems = [
         { name: "Dashboard", icon: <Home size={20} />, path: "/admin" },
-        { name: "Orders", icon: <ShoppingBag size={20} />, path: "/admin/Orders" },
-        { name: "Withdraw", icon: <Wallet size={20} />, path: "/admin/withdraw" },
+        {
+            name: "Orders",
+            icon: <ShoppingBag size={20} color={hasPendingOrders ? "#10b981" : "currentColor"} />,
+            path: "/admin/Orders"
+        },
+        {
+            name: "Withdraw",
+            icon: <Wallet size={20} color={hasPendingWithdrawals ? "#10b981" : "currentColor"} />,
+            path: "/admin/withdraw"
+        },
         { name: "Users", icon: <Users size={20} />, path: "/admin/users" },
         { name: "All Products", icon: <Package size={20} />, path: "/admin/products" },
         { name: "Payment Details", icon: <CreditCard size={20} />, path: "/admin/payment-methods" },
@@ -34,7 +79,6 @@ const AdminSidebar = () => {
     const toggleSidebar = () => {
         const newCollapsedState = !collapsed;
         setCollapsed(newCollapsedState);
-
     };
 
     return (

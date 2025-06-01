@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { User } from '@/lib/models/User';
+import { Order } from '@/lib/models/Order';
 import { connectToDatabase } from '@/lib/mongoose';
 
 export async function GET(request: NextRequest) {
@@ -18,14 +18,20 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Find all users whose referredByCode matches the provided referralCode
-        const referredUsers = await User.find({ referredByCode: referralCode })
-            .select('id name phoneNumber referralCode')
+        // Find all users whose referralCode matches the provided referralCode
+        const referredUsers = await Order.find({ referralCode: referralCode })
+            .select('userId buyer referralCode')
             .lean();
+
+        const formatedUsers = referredUsers.map((user) => ({
+            userId: user.userId,
+            buyer: user.buyer,
+            referralCode: user.buyer,
+        }))
 
         return NextResponse.json({
             success: true,
-            users: referredUsers,
+            users: formatedUsers,
         });
     } catch (error) {
         console.error('Error fetching referrals:', error);

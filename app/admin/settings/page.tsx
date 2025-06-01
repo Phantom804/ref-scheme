@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import ReferralSettings from '@/components/admin/ReferralSettings';
-import TermsAndCondition from '@/components/admin/TermsAndCondition';
 
+import TermsAndCondition from '@/components/admin/TermsAndCondition';
+import WithdrawSettings from '@/components/admin/WithdrawSettings';
+WithdrawSettings
 
 const Settings: React.FC = () => {
 
@@ -43,7 +44,7 @@ const Settings: React.FC = () => {
             {activeTab === 'terms' ? (
                 <TermsAndCondition />
             ) : (
-                <ReferralSettings />
+                <WithdrawSettings />
             )}
         </div>
     );

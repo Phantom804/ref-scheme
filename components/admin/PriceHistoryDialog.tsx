@@ -5,11 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Trash2 } from "lucide-react";
+import { CalendarIcon, Loader2, Trash2, ClockIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface PriceHistoryItem {
@@ -31,6 +32,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
     const [selectedHistoryId, setSelectedHistoryId] = useState<string>('');
     const [price, setPrice] = useState<string>('');
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [time, setTime] = useState<string>('12:00:00');
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
@@ -56,38 +58,42 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
             if (data.length > 0) {
                 setSelectedHistoryId(data[0]._id);
                 setPrice(data[0].price.toString());
-                setDate(new Date(data[0].date));
+                const dateObj = new Date(data[0].date);
+                setDate(dateObj);
+
+                // Format time from the date object
+                const hours = dateObj.getHours().toString().padStart(2, '0');
+                const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                const seconds = dateObj.getSeconds().toString().padStart(2, '0');
+                setTime(`${hours}:${minutes}:${seconds}`);
             }
         } catch (error) {
-
             toast.error('Failed to load price history');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCalendarChange = (
-        _value: string | number,
-        _e: React.ChangeEventHandler<HTMLSelectElement>
-    ) => {
-        const _event = {
-            target: {
-                value: String(_value),
-            },
-        } as React.ChangeEvent<HTMLSelectElement>
-        _e(_event)
-    }
-
     const handleSelectChange = (value: string) => {
         setSelectedHistoryId(value);
         const selected = priceHistory.find(item => item._id === value);
         if (selected) {
             setPrice(selected.price.toString());
-            setDate(new Date(selected.date));
+            const dateObj = new Date(selected.date);
+            setDate(dateObj);
+
+            // Format time from the date object
+            const hours = dateObj.getHours().toString().padStart(2, '0');
+            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+            const seconds = dateObj.getSeconds().toString().padStart(2, '0');
+            setTime(`${hours}:${minutes}:${seconds}`);
         }
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        // Prevent the default behavior which would close the dialog
+        e.preventDefault();
+
         if (!price || !date) {
             toast.error('Please provide both price and date');
             return;
@@ -104,6 +110,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                         productId,
                         price: parseFloat(price),
                         date: date.toISOString(),
+                        time: time
                     }),
                 });
 
@@ -124,6 +131,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                         id: selectedHistoryId,
                         price: parseFloat(price),
                         date: date.toISOString(),
+                        time: time
                     }),
                 });
 
@@ -148,6 +156,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
         if (mode === 'add') {
             setPrice('');
             setDate(new Date());
+            setTime('12:00:00');
         } else if (priceHistory.length > 0) {
             handleSelectChange(priceHistory[0]._id);
         }
@@ -179,6 +188,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
             setSelectedHistoryId('');
             setPrice('');
             setDate(new Date());
+            setTime('12:00:00');
         } catch (error) {
             console.error('Error deleting price history:', error);
             toast.error('Failed to delete price history');
@@ -193,6 +203,10 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
             document.body.style.removeProperty('pointer-events');
         };
     }, []);
+
+    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTime(e.target.value);
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => {
@@ -235,11 +249,17 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                                             <SelectValue placeholder="Select a date " />
                                         </SelectTrigger>
                                         <SelectContent className='text-white'>
-                                            {priceHistory.map((item) => (
-                                                <SelectItem className='text-white' key={item._id} value={item._id}>
-                                                    {format(new Date(item.date), 'PPP')}
-                                                </SelectItem>
-                                            ))}
+                                            {priceHistory.map((item) => {
+                                                const itemDate = new Date(item.date);
+                                                const formattedDateTime = format(itemDate, 'PPP') + ' ' +
+                                                    itemDate.getHours().toString().padStart(2, '0') + ':' +
+                                                    itemDate.getMinutes().toString().padStart(2, '0');
+                                                return (
+                                                    <SelectItem className='text-white' key={item._id} value={item._id}>
+                                                        {formattedDateTime}
+                                                    </SelectItem>
+                                                );
+                                            })}
                                         </SelectContent>
                                     </Select>
                                     <Button
@@ -256,27 +276,51 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                         )}
 
                         {mode === 'add' && (
-                            <div>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn(
-                                                "w-[240px] justify-start text-left font-normal",
-                                                !date && "text-muted-foreground"
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={date} onSelect={setDate} autoFocus />
-                                    </PopoverContent>
-                                </Popover>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium text-white block mb-2">
+                                        Date
+                                    </label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !date && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={date} onSelect={setDate} autoFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium text-white block mb-2">
+                                        Time
+                                    </label>
+                                    <div className="relative">
+                                        <Input
+                                            type="time"
+                                            step="1"
+                                            value={time}
+                                            onChange={handleTimeChange}
+                                            className="peer appearance-none ps-9 text-white [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                        />
+                                        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                                            <ClockIcon size={16} aria-hidden="true" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
+                        
                         <div className="space-y-2">
                             <label htmlFor="price-input" className="text-sm font-medium text-white">
                                 Price

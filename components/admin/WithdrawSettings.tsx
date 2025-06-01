@@ -6,15 +6,15 @@ import { toast } from 'sonner';
 
 
 interface AppSettingsData {
-    referralCommission: number;
+    withdrawLimit: number;
 
 }
 
-function ReferralSettings() {
-    const [initialreferralCommission, setInitialreferralCommission] = useState<number>(0);
+function WithdrawSettings() {
+    const [initialwithdrawLimit, setinitialwithdrawLimit] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSaving, setIsSaving] = useState<boolean>(false);
-    const [referralCommission, setreferralCommission] = useState<number>(0);
+    const [withdrawLimit, setwithdrawLimit] = useState<number>(0);
 
 
     useEffect(() => {
@@ -25,9 +25,9 @@ function ReferralSettings() {
                 if (!response.ok) {
                     throw new Error('Failed to fetch settings');
                 }
-                const data: AppSettingsData = await response.json();
-                setreferralCommission(data.referralCommission);
-                setInitialreferralCommission(data.referralCommission);
+                const data = await response.json();
+                setwithdrawLimit(data.withdrawLimit);
+                setinitialwithdrawLimit(data.withdrawLimit);
             } catch (error) {
                 console.error('Error fetching settings:', error);
                 toast.error('Failed to load settings.');
@@ -50,7 +50,7 @@ function ReferralSettings() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ referralCommission }),
+                body: JSON.stringify({ withdrawLimit }),
             });
 
             if (!response.ok) {
@@ -59,7 +59,7 @@ function ReferralSettings() {
             }
 
             const updatedSettings: AppSettingsData = await response.json();
-            setInitialreferralCommission(updatedSettings.referralCommission);
+            setinitialwithdrawLimit(updatedSettings.withdrawLimit);
             toast.success('Settings saved successfully!');
 
         } catch (error) {
@@ -83,16 +83,16 @@ function ReferralSettings() {
                         <div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label htmlFor="referralCommission" className="block text-sm font-medium text-gray-300 mb-1">
-                                        Referral Comission (%)
+                                    <label htmlFor="swithdrawimit" className="block text-sm font-medium text-gray-300 mb-1">
+                                        Withdraw Limit
                                     </label>
                                     <input
                                         type="number"
-                                        id="referralCommission"
-                                        value={referralCommission}
-                                        onChange={(e) => setreferralCommission(parseFloat(e.target.value))}
+                                        id="withdrawLimit"
+                                        value={withdrawLimit}
+                                        onChange={(e) => setwithdrawLimit(parseFloat(e.target.value))}
                                         className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="Enter referral comission percentage"
+                                        placeholder="Enter withdrawl limit percentage"
                                         disabled={isLoading || isSaving}
                                     />
                                 </div>
@@ -102,7 +102,7 @@ function ReferralSettings() {
                         <div className="flex justify-end pt-4">
                             <Button
                                 onClick={handleSaveSettings}
-                                disabled={isLoading || isSaving || referralCommission === initialreferralCommission}
+                                disabled={isLoading || isSaving || withdrawLimit === initialwithdrawLimit}
                             >
                                 <Save size={16} className="mr-2" />
                                 Save Changes
@@ -117,4 +117,4 @@ function ReferralSettings() {
     )
 }
 
-export default ReferralSettings
+export default WithdrawSettings

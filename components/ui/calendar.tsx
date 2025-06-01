@@ -486,7 +486,7 @@ function YearGrid({
             <Button
               key={i}
               className={cn(
-                "h-7 w-full text-sm font-normal text-foreground",
+                "h-7 w-full text-sm font-normal text-white",
                 displayYears.from + i === new Date().getFullYear() &&
                   "bg-accent font-medium text-accent-foreground"
               )}

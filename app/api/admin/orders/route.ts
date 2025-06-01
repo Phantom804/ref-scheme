@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
         const productName = searchParams.get('productName') || '';
         const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
         const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
-        const orderType = searchParams.get('orderType') || '';
         const showCancelledOrders = searchParams.get('showCancelledOrders') === 'true';
         const showCompletedOrders = searchParams.get('showCompletedOrders') === 'true'; // Read new filter
         const skip = (page - 1) * limit;
@@ -27,8 +26,10 @@ export async function GET(request: NextRequest) {
         // Default to showing only Pending orders unless specific filters are applied
         if (!showCancelledOrders && !showCompletedOrders) {
             searchQuery.status = 'Pending';
+
+            searchQuery.deliveryStatus = { $ne: 'Delivered' };
         } else {
-            // If either filter is true, build an $in array for status
+
             const statusesToInclude = [];
             if (showCancelledOrders) {
                 statusesToInclude.push('Cancelled');
@@ -59,14 +60,7 @@ export async function GET(request: NextRequest) {
             searchQuery.referralCode = { $regex: referralCode, $options: 'i' };
         }
 
-        // Filter by order type (direct or reference)
-        if (orderType === 'direct') {
-            // Direct orders don't have referral codes
-            searchQuery.referralCode = { $exists: false };
-        } else if (orderType === 'reference') {
-            // Reference orders have referral codes
-            searchQuery.referralCode = { $exists: true };
-        }
+
 
         // Price range filter
         if (minPrice !== undefined || maxPrice !== undefined) {
@@ -80,59 +74,24 @@ export async function GET(request: NextRequest) {
         }
 
         // Prepare the query pipeline
-        let orderQuery = Order.find(searchQuery)
-            .sort({ createdAt: -1 })
-            .populate('_id', 'name productCode');
+        let orderQuery = Order.find(searchQuery).sort({ createdAt: -1 });
 
-        // Execute the query for counting with product name filter
-        let allOrders = [];
-
-
+        // Add product name filter to the database query instead of filtering in memory
         if (productName) {
-            allOrders = await orderQuery.exec();
-
-            // Filter by product name
-            allOrders = allOrders.filter(order =>
-                order.productId &&
-                order.productName &&
-                order.productName.toLowerCase().includes(productName.toLowerCase())
-            );
-
-            // Get total count after filtering
-            const totalOrders = allOrders.length;
-
-            // Apply pagination manually
-            const paginatedOrders = allOrders.slice(skip, skip + limit);
-
-            // Format the response
-            const formattedOrders = paginatedOrders.map(order => ({
-                id: order._id,
-                productName: order.productName,
-                buyer: order.buyer,
-                transactionId: order.transactionId,
-                productID: order.productId,
-                quantity: order.quantity,
-                referralCode: order.referralCode,
-                commission: `PKR ${order.commission}`,
-                price: `PKR ${order.price}`,
-                boughtOn: order.createdAt.toLocaleDateString(),
-                status: order.status,
-                receiptUrl: order.receiptUrl
-            }));
-
-            return NextResponse.json({
-                orders: formattedOrders,
-                totalPages: Math.ceil(totalOrders / limit),
-                currentPage: page,
-                totalOrders
+            orderQuery = orderQuery.find({
+                productName: { $regex: productName, $options: 'i' }
             });
         }
 
-        // If no product name filter, use standard pagination
-        const totalOrders = await Order.countDocuments(searchQuery);
+        // Get total count for pagination
+        const totalOrders = await Order.countDocuments(orderQuery.getFilter());
 
-        // Apply pagination
-        const orders = await orderQuery.skip(skip).limit(limit).exec();
+        // Apply pagination at the database level
+        const orders = await orderQuery
+            .skip(skip)
+            .limit(limit)
+            .populate('_id', 'name productCode')
+            .exec();
 
         // Format the response
         const formattedOrders = orders.map(order => ({
@@ -142,13 +101,19 @@ export async function GET(request: NextRequest) {
             transactionId: order.transactionId,
             productId: order.productId,
             quantity: order.quantity,
-            referralCode: order.referralCode,
-            commission: `PKR ${order.commission}`,
+            referralCode: order.referralCode || "-",
+            commission: order.commission ? `PKR ${order.commission}` : "-",
             price: `PKR ${order.price}`,
             boughtOn: order.createdAt.toLocaleDateString(),
             status: order.status,
-            receiptUrl: order.receiptUrl
+            receiptUrl: order.receiptUrl,
+            deliveryRequested: order.deliveryRequested,
+            deliveryStatus: order.deliveryStatus,
+            deliveryDate: order.createdAt.toLocaleDateString(),
+            deliveryAddress: order.deliveryAddress,
+            deliveryContactPhone: order.deliveryContactPhone
         }));
+        console.log(formattedOrders)
 
         return NextResponse.json({
             orders: formattedOrders,
@@ -168,17 +133,26 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
     try {
-        const { orderId, status } = await request.json();
+        const { orderId, status, deliveryStatus } = await request.json();
 
         await connectToDatabase();
 
+        // Prepare update object based on what fields are provided
+        const updateData: any = {};
+
+        if (status) {
+            updateData.status = status;
+        }
+
+        if (deliveryStatus) {
+            updateData.deliveryStatus = deliveryStatus;
+        }
+
         const order = await Order.findByIdAndUpdate(
             orderId,
-            { status },
+            updateData,
             { new: true }
         );
-
-
 
         if (!order) {
             return NextResponse.json(
@@ -205,7 +179,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         return NextResponse.json({
-            message: 'Order status updated successfully',
+            message: status ? 'Order status updated successfully' : 'Delivery status updated successfully',
             order
         });
 

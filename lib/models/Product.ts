@@ -7,6 +7,7 @@ export interface IProduct extends Document {
     category: string;
     description: string;
     referralLimt: number;
+    referralCommission: number;
     imageUrl: string | null;
     productCode: string;
     isLocked: boolean;
@@ -25,6 +26,7 @@ const ProductSchema = new Schema<IProduct>(
         price: { type: Number, required: true },
         category: { type: String, required: true },
         referralLimt: { type: Number, required: true },
+        referralCommission: { type: Number, required: true },
         isLocked: { type: Boolean, default: false },
         description: { type: String, required: true },
         imageUrl: { type: String, default: null },

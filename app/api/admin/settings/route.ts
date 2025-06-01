@@ -8,7 +8,7 @@ async function getOrCreateAppSettings(): Promise<IAppSetting> {
     let appSettings = await AppSetting.findOne({});
     if (!appSettings) {
         appSettings = new AppSetting({
-            referralCommission: 10 // Default value, can be adjusted
+            withdrawLimit: 0 // Default value, can be adjusted
         });
         await appSettings.save();
     }
@@ -29,20 +29,13 @@ export async function POST(req: NextRequest) {
     try {
         await connectToDatabase();
         const body = await req.json();
-        const { referralCommission } = body;
+        const { withdrawLimit } = body;
 
-        if (typeof referralCommission !== 'number' || referralCommission < 0) {
-            return NextResponse.json({ message: 'Invalid referral comission value' }, { status: 400 });
-        }
+        const appSettings = await AppSetting.findOneAndUpdate(
+            {},
+            { $set: { withdrawLimit } },
+        );
 
-        let appSettings = await AppSetting.findOne({});
-        if (!appSettings) {
-            appSettings = new AppSetting({ referralCommission });
-        } else {
-            appSettings.referralCommission = referralCommission;
-        }
-
-        await appSettings.save();
         return NextResponse.json(appSettings, { status: 200 });
     } catch (error) {
         console.error('Error updating app settings:', error);

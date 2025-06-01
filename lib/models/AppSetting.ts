@@ -10,7 +10,7 @@ interface ITerm {
 }
 
 export interface IAppSetting extends Document {
-    referralCommission?: Number;
+    withdrawLimit?: Number;
     terms: ITerm[];
     createdAt: Date;
     updatedAt: Date;
@@ -41,9 +41,8 @@ const TermSchema = new Schema<ITerm>(
 
 const AppSettingSchema = new Schema<IAppSetting>(
     {
-        referralCommission: {
-            type: Number,
-            default: 10
+        withdrawLimit: {
+            type: Number
         },
         terms: {
             type: [TermSchema],

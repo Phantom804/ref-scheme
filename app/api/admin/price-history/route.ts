@@ -5,17 +5,22 @@ import PriceHistory from '@/lib/models/PriceHistory';
 
 export async function POST(req: NextRequest) {
     await connectToDatabase();
-    const { productId, price, date } = await req.json();
-
-
-    const formattedDate = new Date(date).toISOString().split('T')[0];
-
+    const { productId, price, date, time } = await req.json();
 
     if (!productId || price === undefined || !date) {
         return NextResponse.json({ error: 'productId, price, and date are required' }, { status: 400 });
     }
 
-    const entry = await PriceHistory.create({ productId, price, date: formattedDate });
+    // Create a date object with both date and time components
+    const dateObj = new Date(date);
+
+    // If time is provided, set the time component
+    if (time) {
+        const [hours, minutes, seconds] = time.split(':').map(Number);
+        dateObj.setHours(hours, minutes, seconds);
+    }
+
+    const entry = await PriceHistory.create({ productId, price, date: dateObj });
     return NextResponse.json(entry);
 }
 
@@ -42,14 +47,22 @@ export async function GET(req: NextRequest) {
 // Update an existing price history entry
 export async function PATCH(req: NextRequest) {
     await connectToDatabase();
-    const { id, price, date } = await req.json();
+    const { id, price, date, time } = await req.json();
 
     if (!id || price === undefined || !date) {
         return NextResponse.json({ error: 'id, price, and date are required' }, { status: 400 });
     }
-    const formattedDate = new Date(date).toISOString().split('T')[0];
 
-    const updated = await PriceHistory.findByIdAndUpdate(id, { price, date: formattedDate }, { new: true });
+    // Create a date object with both date and time components
+    const dateObj = new Date(date);
+
+    // If time is provided, set the time component
+    if (time) {
+        const [hours, minutes, seconds] = time.split(':').map(Number);
+        dateObj.setHours(hours, minutes, seconds);
+    }
+
+    const updated = await PriceHistory.findByIdAndUpdate(id, { price, date: dateObj }, { new: true });
 
     if (!updated) {
         return NextResponse.json({ error: 'Price history not found' }, { status: 404 });

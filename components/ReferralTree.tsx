@@ -12,9 +12,8 @@ import { Button } from "@/components/ui/button";
 
 // Types for our tree data
 type ReferralUser = {
-    id: string;
     name?: string;
-    phoneNumber: string;
+    buyer: string;
     referralCode: string;
 };
 
@@ -38,14 +37,16 @@ const ReferralTree: React.FC = ({ }) => {
     const [Loading, setLoading] = useState(false);
 
     const { user, isLoading, isAuthenticated } = useAuth();
+
+    const [theRootUser, settheRootUser] = useState<ReferralUser>({ name: user?.name || '', buyer: user?.phoneNumber || '', referralCode: user?.referralCode || '' })
     // Ref for the container element
     const containerRef = useRef<HTMLDivElement>(null);
 
 
     // Map to track loaded nodes to prevent refetching
     const [loadedNodes, setLoadedNodes] = useState<Record<string, boolean>>({});
-   
-    const rootUser = user;
+
+    const rootUser = theRootUser;
     // Redirect to login if not authenticated
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -76,10 +77,10 @@ const ReferralTree: React.FC = ({ }) => {
 
     // Function to convert a user to a tree node
     const userToTreeNode = (user: ReferralUser, hasChildren = false): TreeNode => ({
-        name: user.phoneNumber,
+        name: user.buyer,
         attributes: {
             'Referral Code': user.referralCode,
-            'Phone': user.phoneNumber,
+            'Phone': user.buyer,
         },
         children: [],
         data: user,
@@ -94,7 +95,9 @@ const ReferralTree: React.FC = ({ }) => {
             setTreeData(rootNode);
 
             // Fetch the root user's direct referrals
-            fetchReferrals(rootUser.referralCode, rootNode);
+            if (rootUser.referralCode) {
+                fetchReferrals(rootUser.referralCode, rootNode);
+            }
         }
     }, [rootUser]);
 
@@ -232,11 +235,15 @@ const ReferralTree: React.FC = ({ }) => {
                     stroke="#E5E7EB"
                     strokeWidth={1}
                 />
+                // disable pointer envent
                 <text
                     x="0"
                     y="53"
                     textAnchor="middle"
-                    style={{ fill: '#1F2937', fontSize: '11px', fontFamily: 'inter', letterSpacing: 1, textDecoration: 'none' }}
+                    style={{ fill: '#1F2937', fontSize: '11px', cursor: "none", fontFamily: 'inter', letterSpacing: 1, textDecoration: 'none' }}
+                    onClick={() => {
+                        navigator.clipboard.writeText(node.name);
+                    }}
                 >
                     {node.name}
                 </text>

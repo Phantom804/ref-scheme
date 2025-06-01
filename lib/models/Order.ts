@@ -14,13 +14,19 @@ export interface IOrder extends Document {
     price: number;
     status: 'Pending' | 'Completed' | 'Cancelled';
     receiptUrl: string;
+    // Delivery related fields
+    deliveryRequested: boolean;
+    deliveryStatus: 'Pending' | 'In Transit' | 'Delivered';
+    deliveryAddress: string;
+    deliveryCity: string;
+    deliveryState: string;
+    deliveryZipCode: string;
+    deliveryContactPhone: string;
+
     createdAt: Date;
     updatedAt: Date;
 }
 
-interface OrderDocument extends Document {
-    _id: Schema.Types.ObjectId;
-}
 
 const OrderSchema = new Schema<IOrder>(
     {
@@ -39,6 +45,17 @@ const OrderSchema = new Schema<IOrder>(
             default: 'Pending'
         },
         receiptUrl: { type: String, required: true },
+        // Delivery related fields
+        deliveryRequested: { type: Boolean, default: false },
+        deliveryStatus: {
+            type: String,
+            enum: ['Pending', 'In Transit', 'Delivered']
+        },
+        deliveryAddress: { type: String },
+        deliveryCity: { type: String },
+        deliveryState: { type: String },
+        deliveryZipCode: { type: String },
+        deliveryContactPhone: { type: String },
     },
     {
         timestamps: true,

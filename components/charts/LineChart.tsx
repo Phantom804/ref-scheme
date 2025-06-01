@@ -38,6 +38,13 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameT
                 month: 'short',
                 day: 'numeric'
             });
+
+            // Add time to the formatted date
+            const formattedTime = date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            formattedDate = `${formattedDate}, ${formattedTime}`;
         }
 
         return (
@@ -79,7 +86,7 @@ const LineChart = ({ data, datasets }: LineChartProps) => {
                     dataKey="name"
                     tick={{ fill: '#9CA3AF' }}
                     axisLine={{ stroke: '#4B5563' }}
-                    
+
                 />
                 <YAxis
                     tick={{ fill: '#9CA3AF' }}
