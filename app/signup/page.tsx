@@ -18,7 +18,7 @@ export default function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [checked, setChecked] = useState(false);
-    const [form, setForm] = useState({ name: "", phoneNumber: "", referredByCode: "", country: "", password: "", confirm: "" });
+    const [form, setForm] = useState({ name: "", phoneNumber: "", country: "", password: "", confirm: "" });
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -66,11 +66,7 @@ export default function SignUp() {
             return;
         }
 
-        if (form.referredByCode && !validatePhoneNumber(form.referredByCode)) {
-            setError("Please enter a valid referral code");
-            setIsLoading(false);
-            return;
-        }
+
 
         // Phone validation (if provided)
         if (form.phoneNumber && !validatePhoneNumber(form.phoneNumber)) {
@@ -103,11 +99,11 @@ export default function SignUp() {
         try {
             // Sanitize all inputs before sending to API
             const sanitizedName = form.name ? sanitizeInput(form.name) : "";
-            const sanitizedreferredByCode = sanitizeInput(form.referredByCode);
+
             const sanitizedPhone = form.phoneNumber ? sanitizeInput(form.phoneNumber) : "";
             const sanitizedPassword = form.password.trim(); // Don't modify password content, just trim
 
-            const result = await signUp(sanitizedName, sanitizedreferredByCode, form.country, sanitizedPhone, sanitizedPassword);
+            const result = await signUp(sanitizedName, form.country, sanitizedPhone, sanitizedPassword);
 
             if (result.success) {
                 toast.success("Sign up successful! login Now");
@@ -152,16 +148,7 @@ export default function SignUp() {
 
                         <PhoneInput onPhoneChange={handlePhoneChange} country="PK" placeholder="eg : 03181210111" />
                     </div>
-                    <div>
-                        <label className="block text-gray-300 mb-1">Referral Code  <span className="text-gray-500">(optional)</span></label>
-                        <Input
-                            type="number"
-                            placeholder="Enter your referral Code"
-                            className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
-                            value={form.referredByCode}
-                            onChange={e => setForm({ ...form, referredByCode: e.target.value })}
-                        />
-                    </div>
+
                     <div>
                         <label className="block text-gray-300 mb-1">Pin</label>
                         <div className="relative">

@@ -4,7 +4,7 @@ import { User } from '@/lib/models/User';
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, phoneNumber, referredByCode, password, country } = await req.json();
+        const { name, phoneNumber, password, country } = await req.json();
 
         // Validate inputs
         if (!name || !phoneNumber || !password) {
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
         // Create new user
         const user = await User.create({
             name,
-            referredByCode,
             referralCode: phoneNumber,
             phoneNumber,
             password: password,
