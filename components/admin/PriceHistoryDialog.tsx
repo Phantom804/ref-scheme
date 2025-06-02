@@ -311,16 +311,18 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                                             value={time}
                                             onChange={handleTimeChange}
                                             className="peer appearance-none ps-9 text-white [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                            readOnly={submitting}
                                         />
                                         <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
                                             <ClockIcon size={16} aria-hidden="true" />
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
                         )}
 
-                        
+
                         <div className="space-y-2">
                             <label htmlFor="price-input" className="text-sm font-medium text-white">
                                 Price

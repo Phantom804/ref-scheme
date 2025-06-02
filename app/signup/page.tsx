@@ -18,7 +18,7 @@ export default function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [checked, setChecked] = useState(false);
-    const [form, setForm] = useState({ name: "", phoneNumber: "", country: "", password: "", confirm: "" });
+    const [form, setForm] = useState({ name: "", phoneNumber: "", email: "", country: "", password: "", confirm: "" });
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -41,6 +41,12 @@ export default function SignUp() {
 
         const phoneRegex = /^[0-9]{10,15}$/;
         return phone === "" || phoneRegex.test(phone);
+    };
+
+    // Validate email formatAdd commentMore actions
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return emailRegex.test(email);
     };
 
     // Validate password strength
@@ -68,6 +74,7 @@ export default function SignUp() {
 
 
 
+
         // Phone validation (if provided)
         if (form.phoneNumber && !validatePhoneNumber(form.phoneNumber)) {
             setError("Please enter a valid phone number");
@@ -82,6 +89,9 @@ export default function SignUp() {
             return;
         }
 
+        if (!validateEmail(form.email)) {
+            setError("Please enter a valid email address");
+        }
         // Password match validation
         if (form.password !== form.confirm) {
             setError("PINs do not match");
@@ -99,11 +109,11 @@ export default function SignUp() {
         try {
             // Sanitize all inputs before sending to API
             const sanitizedName = form.name ? sanitizeInput(form.name) : "";
-
+            const sanitizedEmail = sanitizeInput(form.email);
             const sanitizedPhone = form.phoneNumber ? sanitizeInput(form.phoneNumber) : "";
-            const sanitizedPassword = form.password.trim(); // Don't modify password content, just trim
+            const sanitizedPassword = form.password.trim();
 
-            const result = await signUp(sanitizedName, form.country, sanitizedPhone, sanitizedPassword);
+            const result = await signUp(sanitizedName, form.country, sanitizedPhone, sanitizedEmail, sanitizedPassword);
 
             if (result.success) {
                 toast.success("Sign up successful! login Now");
@@ -147,6 +157,19 @@ export default function SignUp() {
                         <label className="block text-gray-300 mb-1">Phone</label>
 
                         <PhoneInput onPhoneChange={handlePhoneChange} country="PK" placeholder="eg : 03181210111" />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-300 mb-1">Email <span className="text-gray-500">(optional)</span></label>
+                        <Input
+                            type="email"
+                            placeholder="Enter your email"
+
+                            className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
+                            value={form.email}
+                            onChange={e => setForm({ ...form, email: e.target.value })}
+
+                        />
                     </div>
 
                     <div>

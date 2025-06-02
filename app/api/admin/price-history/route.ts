@@ -1,7 +1,7 @@
 import { connectToDatabase } from '@/lib/mongoose';
 import { NextRequest, NextResponse } from 'next/server';
 import PriceHistory from '@/lib/models/PriceHistory';
-
+import { Product } from '@/lib/models/Product';
 
 export async function POST(req: NextRequest) {
     await connectToDatabase();
@@ -11,16 +11,30 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'productId, price, and date are required' }, { status: 400 });
     }
 
-    // Create a date object with both date and time components
+
     const dateObj = new Date(date);
 
-    // If time is provided, set the time component
+
     if (time) {
         const [hours, minutes, seconds] = time.split(':').map(Number);
         dateObj.setHours(hours, minutes, seconds);
     }
 
     const entry = await PriceHistory.create({ productId, price, date: dateObj });
+
+    // Get the latest price history entry by date
+    const latestPriceHistory = await PriceHistory.findOne({ productId })
+        .select('price')
+        .sort({ date: -1 })
+        .lean();
+
+
+
+    // Update product's price with the latest price history
+    if (latestPriceHistory) {
+        await Product.findByIdAndUpdate(productId, { price: latestPriceHistory.price });
+    }
+
     return NextResponse.json(entry);
 }
 
@@ -66,6 +80,16 @@ export async function PATCH(req: NextRequest) {
 
     if (!updated) {
         return NextResponse.json({ error: 'Price history not found' }, { status: 404 });
+    }
+
+    // Get the latest price history entry by date
+    const latestPriceHistory = await PriceHistory.findOne({ productId: updated.productId })
+        .select('price')
+        .sort({ date: -1 })
+        .lean();
+
+    if (latestPriceHistory) {
+        await Product.findByIdAndUpdate(updated.productId, { price: latestPriceHistory.price });
     }
 
     return NextResponse.json(updated);

@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
             id: user._id,
             name: user.name,
             phoneNumber: user.phoneNumber,
-            email: user.email,
+            email: user.email || '',
             referralCode: user.referralCode,
             role: user.role
         }
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
                 id: user._id,
                 name: user.name,
                 phoneNumber: user.phoneNumber,
-                email: user.email,
+                email: user.email || '',
                 role: user.role
             }
         });

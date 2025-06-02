@@ -115,28 +115,30 @@ const Orders: React.FC = () => {
 
 
     const handleStatusChange = async (status: Order['status'], orderId: string) => {
-        try {
-            const response = await fetch('/api/admin/orders', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ orderId, status }),
-            });
+        if (window.confirm('Update the status to ' + status + '?')) {
+            try {
+                const response = await fetch('/api/admin/orders', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ orderId, status }),
+                });
 
-            if (!response.ok) {
-                throw new Error('Failed to update order status');
+                if (!response.ok) {
+                    throw new Error('Failed to update order status');
+                }
+
+                // Update local state
+                setOrders(orders.map(order =>
+                    order.id === orderId ? { ...order, status } : order
+                ));
+
+                toast.success('Order status updated successfully');
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                toast.error('Failed to update order status. Please try again.');
             }
-
-            // Update local state
-            setOrders(orders.map(order =>
-                order.id === orderId ? { ...order, status } : order
-            ));
-
-            toast.success('Order status updated successfully');
-        } catch (error) {
-            console.error('Error updating order status:', error);
-            toast.error('Failed to update order status. Please try again.');
         }
     };
 

@@ -41,7 +41,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ id = "1", name, price, image,
                 <div className="mt-auto flex justify-between gap-2 ">
                     <div className="flex items-center justify-center">
                         <div className="price-badge text-white text-center font-bold text-sm sm:text-base px-2 py-1 rounded-lg w-fit">
-                            PKR {price}
+                            <span className="text-base sm:text-xs text-white">PKR</span> {price}
                         </div>
                     </div>
                     <Link href={`/product/${id}`} >

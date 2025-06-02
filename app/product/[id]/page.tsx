@@ -100,7 +100,7 @@ export default function ProductDetail() {
                                         {product?.name}
                                     </div>
                                     <div className="text-xs sm:text-sm text-gray-400 mt-1">{product?.createdAt ? `Listed on ${format(new Date(product.createdAt), 'dd MMM, yyyy')}` : 'Date unavailable'} </div>
-                                    <div className="mt-2 sm:mt-3 text-white text-2xl sm:text-3xl font-bold">PKR {product?.price} <span className="text-sm sm:text-base font-medium bg-gray-700/40 rounded px-2 py-1 ml-2 text-blue-200">Current Price</span></div>
+                                    <div className="mt-2 sm:mt-3 text-white text-2xl sm:text-3xl font-bold"><span className="text-base sm:text-xs text-white">PKR</span> {product?.price} <span className="text-sm sm:text-base font-medium bg-gray-700/40 rounded px-2 py-1 ml-2 text-blue-200">Current Price</span></div>
                                 </div>
                             </div>
 

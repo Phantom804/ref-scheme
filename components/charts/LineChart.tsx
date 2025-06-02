@@ -59,7 +59,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameT
                 </p>
                 {payload.map((entry, index) => (
                     <p key={`item-${index}`} style={{ color: entry.color, margin: '0', fontWeight: 'bold' }}>
-                        {entry.name}: PKR{entry.value}
+                        {entry.name}: <span className="text-base sm:text-xs">PKR </span>{entry.value}
                     </p>
                 ))}
             </div>

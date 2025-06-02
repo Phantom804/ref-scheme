@@ -4,7 +4,7 @@ import { User } from '@/lib/models/User';
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, phoneNumber, password, country } = await req.json();
+        const { name, phoneNumber, email, password, country } = await req.json();
 
         // Validate inputs
         if (!name || !phoneNumber || !password) {
@@ -27,12 +27,13 @@ export async function POST(req: NextRequest) {
         }
 
 
-
+        // add email if provided
         // Create new user
         const user = await User.create({
             name,
             referralCode: phoneNumber,
             phoneNumber,
+            ...(email && { email }),
             password: password,
             country: country,
             isVerified: true
