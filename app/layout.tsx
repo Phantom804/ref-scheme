@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Digital Marketplace",
+  title: "Cash Vibe",
   description: "A next-generation digital marketplace",
 };
 

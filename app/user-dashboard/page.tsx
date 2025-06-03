@@ -111,48 +111,59 @@ const UserDashboard = () => {
                 <div className="min-h-screen bg-[#271843] text-white p-8  px-4 sm:px-6">
 
 
-                    <div className="flex flex-row justify-between flex-wrap gap-2 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8">
 
                         {loading ? (
-                            <Card className="border-0 bg-transparent shadow-none">
-                                <CardContent className="flex items-center gap-2 p-0">
-                                    <div className="text-[#9b87f5] text-xl sm:text-2xl">
-                                        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gray-800">
-                                            <Loader className="text-purple-500" />
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <p className="text-gray-300 text-xs sm:text-sm md:text-md animate-pulse">Loading...</p>
-                                        <p className="text-white text-lg sm:text-xl md:text-3xl font-bold animate-pulse">---</p>
-                                    </div>
-
-                                </CardContent>
-                            </Card>
-
-                        ) : (
-
-                            stats.map((stat, index) => (
-                                <Card key={index} className="border-0 bg-transparent shadow-none">
+                            <>
+                                <Card className="border-0 bg-transparent shadow-none">
                                     <CardContent className="flex items-center gap-2 p-0">
                                         <div className="text-[#9b87f5] text-xl sm:text-2xl">
-                                            {stat.title === 'Total Earning' ? (
-
-                                                <DollarSign className="text-purple-500 sm:w-6 sm:h-6" />
-
-                                            ) : stat.title === 'Pending Commission' ? (
-                                                <DollarSign className="text-purple-500 sm:w-6 sm:h-6" />
-                                            ) : (
-                                                <Layers className="text-indigo-500 sm:w-6 sm:h-6" />
-                                            )}
+                                            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gray-800">
+                                                <Loader className="text-purple-500" />
+                                            </div>
                                         </div>
                                         <div className="flex flex-col">
-                                            <p className="text-gray-300 text-xs sm:text-sm md:text-base">{stat.title}</p>
-                                            <p className="text-white text-base sm:text-lg md:text-2xl font-bold">{stat.value}</p>
+                                            <p className="text-gray-300 text-xs sm:text-sm md:text-md animate-pulse">Loading...</p>
+                                            <p className="text-white text-lg sm:text-xl md:text-3xl font-bold animate-pulse">---</p>
                                         </div>
                                     </CardContent>
                                 </Card>
-
-                            ))
+                                <Card className="border-0 bg-transparent shadow-none">
+                                    <CardContent className="flex items-center gap-2 p-0">
+                                        <div className="text-[#9b87f5] text-xl sm:text-2xl">
+                                            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gray-800">
+                                                <Loader className="text-purple-500" />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <p className="text-gray-300 text-xs sm:text-sm md:text-md animate-pulse">Loading...</p>
+                                            <p className="text-white text-lg sm:text-xl md:text-3xl font-bold animate-pulse">---</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </>
+                        ) : (
+                            <>
+                                {stats.map((stat, index) => (
+                                    <Card key={index} className="border-0 bg-transparent shadow-none">
+                                        <CardContent className="flex items-center gap-1 xs:gap-2 p-0">
+                                            <div className="text-[#9b87f5] text-lg xs:text-xl sm:text-2xl">
+                                                {stat.title === 'Total Earning' ? (
+                                                    <DollarSign className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-purple-500" />
+                                                ) : stat.title === 'Pending Commission' ? (
+                                                    <DollarSign className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-purple-500" />
+                                                ) : (
+                                                    <Layers className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-indigo-500" />
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <p className="text-gray-300 text-[10px] xs:text-xs sm:text-sm md:text-base">{stat.title}</p>
+                                                <p className="text-white text-xs xs:text-sm sm:text-base md:text-lg lg:text-2xl font-bold">{stat.value}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </>
                         )}
                     </div>
 

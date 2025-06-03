@@ -30,11 +30,13 @@
     "cmdk": "^1.1.1",
     "country-list": "^2.3.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.5.0",
     "jose": "^6.0.10",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.503.0",
     "mongoose": "^8.14.1",
     "next": "^15.3.2",
+    "node-cron": "^4.1.0",
     "react": "^18.2.0",
     "react-country-flag": "^3.1.0",
     "react-d3-tree": "^3.6.6",
@@ -42,7 +44,8 @@
     "react-dom": "^18.2.0",
     "recharts": "^2.15.3",
     "sonner": "^2.0.3",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -52,7 +55,8 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "tailwindcss": "^4",
+    "@types/ws": "^8.18.1",
+    "ts-node": "^10.9.2",
     "tw-animate-css": "^1.2.8",
     "typescript": "^5"
   }

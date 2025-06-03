@@ -94,7 +94,6 @@ function ProductsContent() {
             setTotalProducts(data.totalProducts);
         } catch (error) {
             console.error('Error fetching products:', error);
-            toast.error('Failed to load products. Please try again.');
         } finally {
             setLoading(false);
         }

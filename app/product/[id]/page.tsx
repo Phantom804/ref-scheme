@@ -37,7 +37,7 @@ export default function ProductDetail() {
     const [product, setProduct] = useState<Product | null>(null);
 
     const [loading, setLoading] = useState(false);
-    const [selectedRange, setSelectedRange] = useState<'yearly' | '6months' | 'monthly'>('yearly');
+    const [selectedRange, setSelectedRange] = useState<'yearly' | '6months' | 'monthly'>('monthly');
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -117,7 +117,7 @@ export default function ProductDetail() {
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                                     <span className="text-white font-bold text-lg">Price Graph</span>
                                     <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                                        {['yearly', '6months', 'monthly'].map((range) => (
+                                        {['monthly', '6months', 'yearly'].map((range) => (
                                             <button
                                                 key={range}
                                                 onClick={() => setSelectedRange(range as any)}
