@@ -4,9 +4,12 @@ import PriceAutomation from '@/lib/models/PriceAutomation';
 import PriceHistory from '@/lib/models/PriceHistory';
 import { Product } from '@/lib/models/Product';
 import cron from 'node-cron';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+
 
 // Store active cron jobs with their IDs
 const activeCronJobs = new Map();
+const pakistanTimeZone = 'Asia/Karachi';
 
 // Function to create a price history entry
 async function createPriceHistoryEntry(productId: string, price: number, date: Date) {
@@ -87,13 +90,8 @@ async function startPriceAutomation(automation: any) {
     const elapsedMs = now.getTime() - startDate.getTime();
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
 
-    // Calculate current price based on elapsed time
-    let currentPrice = startPrice;
-    if (elapsedMinutes > 0) {
-        currentPrice = startPrice + (priceChangePerMinute * elapsedMinutes);
-    }
 
-    // Schedule a job to run every minute
+    // Schedule a job to run every minute, based on Pakistan Standard Time
     const job = cron.schedule('* * * * *', async () => {
         const currentTime = new Date();
 
@@ -120,7 +118,7 @@ async function startPriceAutomation(automation: any) {
 
         // Create price history entry
         await createPriceHistoryEntry(productId.toString(), newPrice, currentTime);
-    });
+    }, { timezone: pakistanTimeZone });
 
     // Store the job reference
     activeCronJobs.set(automation._id.toString(), job);
@@ -163,25 +161,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
 
-        // Create start and end date objects with time
-        const startDateTime = new Date(startDate);
+        // Interpret incoming startDate (ISO string from client) and startTime (HH:mm:ss string) as PKT
+        // Convert the incoming UTC date string (from client's Date object) to a Date object
+        const startDateObjUTC = new Date(startDate);
+        // Convert this UTC Date object to a PKT zoned Date object to correctly apply time
+        const startDatePKT = toZonedTime(startDateObjUTC, pakistanTimeZone);
         const [startHours, startMinutes, startSeconds] = startTime.split(':').map(Number);
-        startDateTime.setHours(startHours, startMinutes, startSeconds || 0);
+        startDatePKT.setHours(startHours, startMinutes, startSeconds || 0);
+        // Convert the PKT date (with correct wall-clock time for PKT) back to UTC for storage
+        const finalStartDateTimeUTC = fromZonedTime(startDatePKT, pakistanTimeZone);
 
-        const endDateTime = new Date(endDate);
+        // Repeat for endDate and endTime
+        const endDateObjUTC = new Date(endDate);
+        const endDatePKT = toZonedTime(endDateObjUTC, pakistanTimeZone);
         const [endHours, endMinutes, endSeconds] = endTime.split(':').map(Number);
-        endDateTime.setHours(endHours, endMinutes, endSeconds || 0);
+        endDatePKT.setHours(endHours, endMinutes, endSeconds || 0);
+        const finalEndDateTimeUTC = fromZonedTime(endDatePKT, pakistanTimeZone);
 
-        // Validate dates
-        if (endDateTime <= startDateTime) {
+        // Validate dates (compare UTC timestamps)
+        if (finalEndDateTimeUTC.getTime() <= finalStartDateTimeUTC.getTime()) {
             return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 });
         }
 
-        // Create automation record
+        // Create automation record with UTC dates
         const automation = await PriceAutomation.create({
             productId,
-            startDate: startDateTime,
-            endDate: endDateTime,
+            startDate: finalStartDateTimeUTC,
+            endDate: finalEndDateTimeUTC,
             startPrice: product.price,
             targetPercentage: parseFloat(percentage),
             isActive: true
