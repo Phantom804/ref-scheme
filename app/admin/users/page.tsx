@@ -166,7 +166,7 @@ const Users: React.FC = () => {
     };
 
     const handleDownloadReceipts = async (idCardFrontUrl: string, idCardBackUrl: string) => {
-        const downloadImage = async (url: string, index: number) => {
+        const downloadImage = async (url: string, index: string) => {
             if (!url) {
                 toast.error(`Receipt ${index} URL not provided`);
                 return;
