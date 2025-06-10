@@ -273,8 +273,10 @@ const ReferralTree: React.FC = ({ }) => {
                                 data={treeData}
                                 translate={{ x: dimensions.width / 2, y: dimensions.height / 3 }}
                                 orientation="vertical"
-                                nodeSize={{ x: dimensions.width < 768 ? 150 : 200, y: dimensions.width < 768 ? 80 : 100 }}
-                                separation={{ siblings: dimensions.width < 768 ? 1.5 : 2, nonSiblings: dimensions.width < 768 ? 2 : 2.5 }}
+                              nodeSize={{ x: 220, y: 120 }} // More spacing between nodes
+separation={{ siblings: 2, nonSiblings: 3 }} // Increased multipliers
+
+
                                 renderCustomNodeElement={renderCustomNode}
                                 pathFunc="step"
                                 pathClassFunc={() => 'tree-link'}

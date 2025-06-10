@@ -125,16 +125,20 @@ const Orders: React.FC = () => {
                     body: JSON.stringify({ orderId, status }),
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to update order status');
+                const resData = await response.json();
+
+                if (response.ok) {
+
+                    setOrders(orders.map(order =>
+                        order.id === orderId ? { ...order, status } : order
+                    ));
+
+                    toast.success('Order status updated successfully');
+                } else {
+                    toast.error(resData.message);
                 }
 
-                // Update local state
-                setOrders(orders.map(order =>
-                    order.id === orderId ? { ...order, status } : order
-                ));
 
-                toast.success('Order status updated successfully');
             } catch (error) {
                 console.error('Error updating order status:', error);
                 toast.error('Failed to update order status. Please try again.');

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
-import ClientProductSection from '@/components/ClientProductSection';
+import ProductsSection from '@/components/ProductsSection';
 import { Loader2 } from "lucide-react";
 import LineChart from "@/components/charts/LineChart";
 import ProductLockPanel from "@/components/ProductLockPanel";
@@ -155,7 +155,7 @@ export default function ProductDetail() {
 
                     </div>
                     <div className="px-4 sm:px-6">
-                        <ClientProductSection TopHeading="Suggested Products" viewAll={false} />
+                        <ProductsSection TopHeading="Suggested Products" viewAll={false} />
                     </div>
                 </div>
 

@@ -126,7 +126,6 @@ const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
                     id="amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    min="20"
                     step="0.01"
                     required
                     className="block w-full pl-10 pr-3 py-2 border border-slate-600 rounded-lg bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"

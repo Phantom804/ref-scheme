@@ -148,11 +148,15 @@ export async function PATCH(request: NextRequest) {
             updateData.deliveryStatus = deliveryStatus;
         }
 
-        const order = await Order.findByIdAndUpdate(
-            orderId,
-            updateData,
-            { new: true }
-        );
+        const order = await Order.findById(orderId);
+
+        if (order?.status !== 'Pending') {
+            return NextResponse.json(
+                { error: 'You can not change Status Again' },
+                { status: 400 }
+            );
+        }
+
 
         if (!order) {
             return NextResponse.json(
@@ -160,6 +164,9 @@ export async function PATCH(request: NextRequest) {
                 { status: 404 }
             );
         }
+
+        order?.set(updateData);
+        await order?.save();
 
         // If status is changed to Completed and there's a referral code, update user's total earnings
         if (status === 'Completed' && order.referralCode) {

@@ -178,8 +178,11 @@ function BoughtProducts() {
                                     <TableCell>
                                         {product.productName}
                                     </TableCell>
+
                                     <TableCell>{product.transactionId}</TableCell>
-                                    <TableCell>{product.referralUsageCount}/{product.productReferralLimit}</TableCell>
+                                    <TableCell>{product.referralUsageCount}/{product.productReferralLimit} <span> {product.referralUsageCount == product.productReferralLimit && (
+                                        <TableCell className="text-red-500 text-xs">Referral Limit Reached</TableCell>
+                                    )}</span></TableCell>
                                     <TableCell>{product.quantity}</TableCell>
                                     <TableCell>{product.referralCode}</TableCell>
                                     <TableCell className="text-[#3B82F6]">{product.price}</TableCell>

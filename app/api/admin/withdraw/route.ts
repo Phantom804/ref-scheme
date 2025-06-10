@@ -119,6 +119,13 @@ export async function PATCH(request: NextRequest) {
 
         const withdrawal = await Withdraw.findById(withdrawalId);
 
+
+        if (withdrawal?.status !== 'Pending') {
+            return NextResponse.json(
+                { error: 'You can not change Status Again' },
+                { status: 400 }
+            );
+        }
         if (!withdrawal) {
             return NextResponse.json(
                 { error: 'Withdrawal request not found' },

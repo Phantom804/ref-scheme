@@ -94,28 +94,33 @@ const Withdraw: React.FC = () => {
     };
 
     const handleStatusChange = async (status: Withdrawal['status'], withdrawalId: string) => {
-        try {
-            const response = await fetch('/api/admin/withdraw', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ withdrawalId, status }),
-            });
+        if (window.confirm('Update the status to ' + status + '?')) {
+            try {
+                const response = await fetch('/api/admin/withdraw', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ withdrawalId, status }),
+                });
 
-            if (!response.ok) {
-                throw new Error('Failed to update withdrawal status');
+                const resData = await response.json();
+                if (response.ok) {
+                    // Update local state
+                    setWithdrawals(withdrawals.map(withdrawal =>
+                        withdrawal.id === withdrawalId ? { ...withdrawal, status } : withdrawal
+                    ));
+
+                    toast.success('Withdrawal status updated successfully');
+                } else {
+                    toast.error(resData.message);
+                }
+
+
+            } catch (error) {
+                console.error('Error updating withdrawal status:', error);
+                toast.error('Failed to update withdrawal status. Please try again.');
             }
-
-            // Update local state
-            setWithdrawals(withdrawals.map(withdrawal =>
-                withdrawal.id === withdrawalId ? { ...withdrawal, status } : withdrawal
-            ));
-
-            toast.success('Withdrawal status updated successfully');
-        } catch (error) {
-            console.error('Error updating withdrawal status:', error);
-            toast.error('Failed to update withdrawal status. Please try again.');
         }
     };
 

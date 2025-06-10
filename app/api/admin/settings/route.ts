@@ -29,11 +29,11 @@ export async function POST(req: NextRequest) {
     try {
         await connectToDatabase();
         const body = await req.json();
-        const { withdrawLimit } = body;
+        const { minWithdrawPercent, minWithdrawAmount } = body;
 
         const appSettings = await AppSetting.findOneAndUpdate(
             {},
-            { $set: { withdrawLimit } },
+            { $set: { minWithdrawPercent, minWithdrawAmount } },
         );
 
         return NextResponse.json(appSettings, { status: 200 });

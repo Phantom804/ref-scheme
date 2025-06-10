@@ -10,7 +10,8 @@ interface ITerm {
 }
 
 export interface IAppSetting extends Document {
-    withdrawLimit?: Number;
+    minWithdrawPercent?: Number;
+    minWithdrawAmount?: Number;
     terms: ITerm[];
     createdAt: Date;
     updatedAt: Date;
@@ -41,7 +42,10 @@ const TermSchema = new Schema<ITerm>(
 
 const AppSettingSchema = new Schema<IAppSetting>(
     {
-        withdrawLimit: {
+        minWithdrawPercent: {
+            type: Number
+        },
+        minWithdrawAmount: {
             type: Number
         },
         terms: {

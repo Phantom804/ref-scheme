@@ -7,12 +7,10 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import ViewPriceHistory from './ViewPriceHistory';
 import AddPriceHistory from './AddPriceHistory';
-import AutomatePriceHistory from './AutomatePriceHistory';
-import ViewCronJobs from './ViewCronJobs';
 import { PriceHistoryItem, PriceHistoryDialogProps } from './Types/PriceHistoryTypes';
 
 const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogProps) => {
-    const [mode, setMode] = useState<'view' | 'add' | 'automation' | 'cron'>('view');
+    const [mode, setMode] = useState<'view' | 'add'>('view');
     const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([]);
     const [selectedHistoryId, setSelectedHistoryId] = useState<string>('');
     const [price, setPrice] = useState<string>('');
@@ -22,12 +20,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
     const [submitting, setSubmitting] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
-    // Automation state
-    const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-    const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-    const [startTime, setStartTime] = useState<string>('12:00:00');
-    const [endTime, setEndTime] = useState<string>('12:00:00');
-    const [percentage, setPercentage] = useState<string>('');
+
 
     useEffect(() => {
         if (isOpen && productId) {
@@ -140,39 +133,6 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                 }
 
                 toast.success('Price history updated successfully');
-            } else if (mode === 'automation') {
-                if (!startDate || !endDate || !startTime || !endTime || !percentage) {
-                    toast.error('Please fill in all automation fields');
-                    setSubmitting(false);
-                    return;
-                }
-
-                // Create price automation
-                const response = await fetch('/api/admin/price-automation', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productId,
-                        startDate: startDate.toISOString(),
-                        endDate: endDate.toISOString(),
-                        startTime,
-                        endTime,
-                        percentage
-                    }),
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    toast.error(data.error || 'Failed to create price automation');
-                    setSubmitting(false);
-                    return;
-                }
-
-                toast.success('Price automation scheduled successfully');
-
-                // Refresh price history data and trigger cron jobs refresh
-                await fetchPriceHistory();
-                setRefreshTrigger(prev => prev + 1);
             }
         } catch (error) {
             console.error('Error saving price history:', error);
@@ -187,35 +147,12 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
             setPrice('');
             setDate(new Date());
             setTime('12:00:00');
-        } else if (mode === 'automation') {
-            // Set default values for automation
-            if (priceHistory.length > 0) {
-                const latestEntry = priceHistory[0];
-                const latestDate = new Date(latestEntry.date);
-
-                setStartDate(latestDate);
-                setEndDate(new Date(latestDate.getTime() + 24 * 60 * 60 * 1000)); // Default to 1 day later
-
-                const hours = latestDate.getHours().toString().padStart(2, '0');
-                const minutes = latestDate.getMinutes().toString().padStart(2, '0');
-                const seconds = latestDate.getSeconds().toString().padStart(2, '0');
-
-                setStartTime(`${hours}:${minutes}:${seconds}`);
-                setEndTime(`${hours}:${minutes}:${seconds}`);
-                setPercentage('10'); // Default 10% increase
-            } else {
-                setStartDate(new Date());
-                setEndDate(new Date(new Date().getTime() + 24 * 60 * 60 * 1000));
-                setStartTime('12:00:00');
-                setEndTime('12:00:00');
-                setPercentage('10');
-            }
         } else if (priceHistory.length > 0) {
             handleSelectChange(priceHistory[0]._id);
         }
     };
 
-    const toggleMode = (newMode: 'view' | 'add' | 'automation' | 'cron') => {
+    const toggleMode = (newMode: 'view' | 'add') => {
         setMode(newMode);
         resetForm();
     };
@@ -297,20 +234,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                             >
                                 Add New Price
                             </Button>
-                            <Button
-                                variant="ghost"
-                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${mode === 'automation' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                                onClick={() => toggleMode('automation')}
-                            >
-                                Automate
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${mode === 'cron' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                                onClick={() => toggleMode('cron')}
-                            >
-                                Active Automations
-                            </Button>
+
 
                         </div>
                     </div>
@@ -333,7 +257,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                                 handleDelete={handleDelete}
                                 setPrice={setPrice}
                             />
-                        ) : mode === 'add' ? (
+                        ) : (
                             <AddPriceHistory
                                 date={date}
                                 time={time}
@@ -343,49 +267,25 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                                 handleTimeChange={handleTimeChange}
                                 setPrice={setPrice}
                             />
-                        ) : mode === 'automation' ? (
-                            <AutomatePriceHistory
-                                currentPrice={priceHistory.length > 0 ? priceHistory[0].price.toString() : '0'}
-                                startDate={startDate}
-                                endDate={endDate}
-                                startTime={startTime}
-                                endTime={endTime}
-                                percentage={percentage}
-                                submitting={submitting}
-                                setStartDate={setStartDate}
-                                setEndDate={setEndDate}
-                                setStartTime={setStartTime}
-                                setEndTime={setEndTime}
-                                setPercentage={setPercentage}
-                            />
-                        ) : (
-                            <ViewCronJobs
-                                productId={productId}
-                                refreshTrigger={refreshTrigger}
-                            />
                         )}
                     </div>
                 )}
 
                 <DialogFooter>
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    {mode !== 'cron' && (
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={submitting || !price || !date}
-                        >
-                            {submitting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                mode === 'add' ? 'Add' :
-                                    mode === 'view' ? 'Update' :
-                                        'Schedule Automation'
-                            )}
-                        </Button>
-                    )}
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={submitting || !price || !date}
+                    >
+                        {submitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            mode === 'add' ? 'Add' : 'Update'
+                        )}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

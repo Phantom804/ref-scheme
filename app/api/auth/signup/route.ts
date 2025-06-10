@@ -1,15 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, phoneNumber, email, password, country } = await req.json();
+        // Parse the form data
+        const formData = await req.formData();
+        
+        const name = formData.get('name') as string;
+        const phoneNumber = formData.get('phoneNumber') as string;
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+        const country = formData.get('country') as string;
+        const idCardFront = formData.get('idCardFront') as File;
+        const idCardBack = formData.get('idCardBack') as File;
 
         // Validate inputs
-        if (!name || !phoneNumber || !password) {
+        if (!name || !phoneNumber || !password || !idCardFront || !idCardBack) {
             return NextResponse.json(
                 { success: false, message: 'Please fill All Required Fields' },
+                { status: 400 }
+            );
+        }
+
+        // Validate ID card file types
+        const frontFileType = idCardFront.type;
+        const backFileType = idCardBack.type;
+        
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(frontFileType) || 
+            !['image/jpeg', 'image/png', 'image/jpg'].includes(backFileType)) {
+            return NextResponse.json(
+                { success: false, message: 'Only JPG and PNG formats are supported for ID cards' },
+                { status: 400 }
+            );
+        }
+
+        // Validate file sizes (max 1MB each)
+        if (idCardFront.size > 1024 * 1024 || idCardBack.size > 1024 * 1024) {
+            return NextResponse.json(
+                { success: false, message: 'ID card image size must be less than 1MB' },
                 { status: 400 }
             );
         }
@@ -26,9 +63,47 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Upload ID card front image to Cloudinary
+        const frontArrayBuffer = await idCardFront.arrayBuffer();
+        const frontBuffer = Buffer.from(frontArrayBuffer);
+        const frontBase64String = frontBuffer.toString('base64');
+        const frontDataURI = `data:${frontFileType};base64,${frontBase64String}`;
 
-        // add email if provided
-        // Create new user
+        const frontUploadResult = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload(
+                frontDataURI,
+                {
+                    folder: 'digital-marketplace/id-cards',
+                    resource_type: 'image',
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+        });
+
+        // Upload ID card back image to Cloudinary
+        const backArrayBuffer = await idCardBack.arrayBuffer();
+        const backBuffer = Buffer.from(backArrayBuffer);
+        const backBase64String = backBuffer.toString('base64');
+        const backDataURI = `data:${backFileType};base64,${backBase64String}`;
+
+        const backUploadResult = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload(
+                backDataURI,
+                {
+                    folder: 'digital-marketplace/id-cards',
+                    resource_type: 'image',
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+        });
+
+        // Create new user with ID card image URLs
         const user = await User.create({
             name,
             referralCode: phoneNumber,
@@ -36,9 +111,10 @@ export async function POST(req: NextRequest) {
             ...(email && { email }),
             password: password,
             country: country,
+            idCardFrontUrl: (frontUploadResult as any).secure_url,
+            idCardBackUrl: (backUploadResult as any).secure_url,
             isVerified: true
         });
-
 
         return NextResponse.json(
             {
@@ -55,4 +131,4 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
-} 
+}

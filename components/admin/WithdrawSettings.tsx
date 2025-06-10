@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 interface AppSettingsData {
     withdrawLimit: number;
+    minWithdrawLimit: number;
 
 }
 
@@ -14,8 +15,8 @@ function WithdrawSettings() {
     const [initialwithdrawLimit, setinitialwithdrawLimit] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isSaving, setIsSaving] = useState<boolean>(false);
-    const [withdrawLimit, setwithdrawLimit] = useState<number>(0);
-
+    const [minWithdrawPercent, setminWithdrawPercent] = useState<number>(0);
+    const [minWithdrawAmount, setminWithdrawAmount] = useState<number>(0);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -26,8 +27,9 @@ function WithdrawSettings() {
                     throw new Error('Failed to fetch settings');
                 }
                 const data = await response.json();
-                setwithdrawLimit(data.withdrawLimit);
-                setinitialwithdrawLimit(data.withdrawLimit);
+                setminWithdrawPercent(data.minWithdrawPercent);
+                setminWithdrawAmount(data.minWithdrawAmount);
+                setinitialwithdrawLimit(data.minWithdrawPercent);
             } catch (error) {
                 console.error('Error fetching settings:', error);
                 toast.error('Failed to load settings.');
@@ -50,7 +52,7 @@ function WithdrawSettings() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ withdrawLimit }),
+                body: JSON.stringify({ minWithdrawPercent, minWithdrawAmount }),
             });
 
             if (!response.ok) {
@@ -88,11 +90,26 @@ function WithdrawSettings() {
                                     </label>
                                     <input
                                         type="number"
-                                        id="withdrawLimit"
-                                        value={withdrawLimit}
-                                        onChange={(e) => setwithdrawLimit(parseFloat(e.target.value))}
+                                        id="minWithdrawPercent"
+                                        value={minWithdrawPercent}
+                                        onChange={(e) => setminWithdrawPercent(parseFloat(e.target.value))}
                                         className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                                         placeholder="Enter withdrawl limit percentage"
+                                        disabled={isLoading || isSaving}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="swithdrawimit" className="block text-sm font-medium text-gray-300 mb-1">
+                                        Minimun Withdraw in Number
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="minWithdrawAmount"
+                                        value={minWithdrawAmount}
+                                        onChange={(e) => setminWithdrawAmount(parseFloat(e.target.value))}
+                                        className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                        placeholder="Enter minimum withdrawl in numbers"
                                         disabled={isLoading || isSaving}
                                     />
                                 </div>
@@ -102,7 +119,7 @@ function WithdrawSettings() {
                         <div className="flex justify-end pt-4">
                             <Button
                                 onClick={handleSaveSettings}
-                                disabled={isLoading || isSaving || withdrawLimit === initialwithdrawLimit}
+                                disabled={isLoading || isSaving || minWithdrawPercent === initialwithdrawLimit}
                             >
                                 <Save size={16} className="mr-2" />
                                 Save Changes

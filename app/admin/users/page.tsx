@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, ChevronLeft, ChevronRight, UserPlus, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Search, Filter, Download, UserPlus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,6 @@ import Pagination from '@/components/Pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import PhoneNumbersDialog from '@/components/admin/PhoneNumbersDialog';
 
 interface User {
@@ -21,6 +20,8 @@ interface User {
     email: string;
     country?: string;
     phoneNumber?: string;
+    idCardFrontUrl: string;
+    idCardBackUrl: string;
     password?: string;
     role: string;
     isBlocked: boolean;
@@ -164,6 +165,61 @@ const Users: React.FC = () => {
         setSearchTimeout(timeout);
     };
 
+    const handleDownloadReceipts = async (idCardFrontUrl: string, idCardBackUrl: string) => {
+        const downloadImage = async (url: string, index: number) => {
+            if (!url) {
+                toast.error(`Receipt ${index} URL not provided`);
+                return;
+            }
+
+            try {
+                const response = await fetch(url, { mode: 'cors' });
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch image ${index}: ${response.status} ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+
+                let fileExtension = '.png';
+                if (url.includes('.')) {
+                    const urlParts = url.split('.');
+                    const extension = urlParts[urlParts.length - 1].toLowerCase();
+                    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
+                        fileExtension = `.${extension}`;
+                    }
+                }
+
+                const filename = `idcard${index}_${new Date().getTime()}${fileExtension}`;
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                link.style.display = 'none';
+
+                document.body.appendChild(link);
+                link.click();
+
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(blobUrl);
+                }, 100);
+            } catch (error) {
+                console.error(`Error downloading receipt ${index}:`, error);
+                toast.error(`Failed to download receipt ${index}`);
+            }
+        };
+
+        toast.loading('Preparing downloads...');
+
+        await downloadImage(idCardFrontUrl, "front");
+        await downloadImage(idCardBackUrl, "back");
+
+        toast.dismiss();
+        toast.success('Receipts downloaded successfully');
+    };
+
+
+
     return (
         <div className="pt-8 md:ml-16 lg:ml-64 transition-all duration-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
@@ -269,6 +325,7 @@ const Users: React.FC = () => {
                                     <TableHead className="text-gray-400">Role</TableHead>
                                     <TableHead className="text-gray-400">Country</TableHead>
                                     <TableHead className="text-gray-400">Phone</TableHead>
+                                    <TableHead className="text-gray-400">ID Card</TableHead>
                                     <TableHead className="text-gray-400 text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -291,6 +348,17 @@ const Users: React.FC = () => {
                                         <TableCell className="text-white">
                                             {user.phoneNumber}
                                         </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="ghost"
+                                                className="text-[#3B82F6] hover:text-[#3B82F6]/80 p-0"
+                                                onClick={() => handleDownloadReceipts(user.idCardFrontUrl, user.idCardBackUrl)}
+                                            >
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Download
+                                            </Button>
+                                        </TableCell>
+
                                         <TableCell className="text-right space-x-2">
                                             <button
                                                 className="text-blue-500 hover:text-blue-400"

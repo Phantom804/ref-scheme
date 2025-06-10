@@ -18,7 +18,7 @@ type AuthContextType = {
     isAdmin: boolean;
     isSuperAdmin: boolean;
     signIn: (phoneNumber: string, password: string) => Promise<{ success: boolean, message?: string }>;
-    signUp: (name: string, country: string, phoneNumber: string, email: string, password: string) => Promise<{ success: boolean, message?: string }>;
+    signUp: (formData: FormData) => Promise<{ success: boolean, message?: string }>;
     signOut: () => Promise<void>;
     updateUserInfo: (data: { id: string, name?: string, email?: string, phoneNumber?: string, oldpin?: string, newpin?: string }) => Promise<{ success: boolean, message?: string, user?: User }>;
 };
@@ -79,12 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const signUp = async (name: string, country: string, phoneNumber: string, email: string, password: string) => {
+    const signUp = async (formData: FormData) => {
         try {
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, country, phoneNumber, email, password }),
+                body: formData,
             });
 
             const data = await response.json();

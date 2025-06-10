@@ -28,8 +28,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Find user by ID from token
-        const user = await User.findById(decoded.id).select('-password').exec();
+
 
 
         const searchParams = request.nextUrl.searchParams;
@@ -48,7 +47,7 @@ export async function GET(request: NextRequest) {
             ];
         }
 
-        if (user.role === 'admin') {
+        if (decoded.role === 'admin') {
             searchQuery.role = 'user';
         }
         // Exclude superAdmin users

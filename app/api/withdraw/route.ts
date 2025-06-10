@@ -83,11 +83,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const withdrawSettings = await AppSetting.findOne({}, 'withdrawLimit').exec();
-        const withdrawLimit = withdrawSettings?.withdrawLimit;
-        if (withdrawLimit < amount) {
+        const withdrawSettings = await AppSetting.findOne({}, 'minWithdrawPercent minWithdrawAmount').exec();
+        const minWithdrawAmount = withdrawSettings?.minWithdrawAmount;
+        if (minWithdrawAmount > amount) {
             return NextResponse.json(
-                { success: false, message: 'Withdraw amount exceeds the limit' },
+                { success: false, message: `Withdraw amount should be atleast ${minWithdrawAmount} and ${withdrawSettings?.minWithdrawPercent}% of your total Earning` },
                 { status: 400 }
             );
 
@@ -98,6 +98,16 @@ export async function POST(request: NextRequest) {
         if (!user || user.totalEarning < amount) {
             return NextResponse.json(
                 { success: false, message: 'Insufficient balance' },
+                { status: 400 }
+            );
+        }
+
+
+        const minWithdrawPercent = (withdrawSettings.minWithdrawPercent / 100) * user.totalEarning;
+
+        if (amount < minWithdrawPercent) {
+            return NextResponse.json(
+                { success: false, message: `You can only withdraw up to ${withdrawSettings.minWithdrawPercent}% of your total earnings` },
                 { status: 400 }
             );
         }

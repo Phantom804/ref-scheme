@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +19,12 @@ export default function SignUp() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [checked, setChecked] = useState(false);
     const [form, setForm] = useState({ name: "", phoneNumber: "", email: "", country: "", password: "", confirm: "" });
+    const [idCardFront, setIdCardFront] = useState<File | null>(null);
+    const [idCardBack, setIdCardBack] = useState<File | null>(null);
+    const [idCardFrontPreview, setIdCardFrontPreview] = useState<string>("");
+    const [idCardBackPreview, setIdCardBackPreview] = useState<string>("");
+    const frontFileInputRef = useRef<HTMLInputElement>(null);
+    const backFileInputRef = useRef<HTMLInputElement>(null);
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -60,6 +66,36 @@ export default function SignUp() {
             .replace(/>/g, '&gt;');
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'front' | 'back') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            setError("Only JPG and PNG formats are supported");
+            return;
+        }
+
+        // Validate file size (max 1MB)
+        if (file.size > 1024 * 1024) {
+            setError("File size must be less than 1MB");
+            return;
+        }
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (type === 'front') {
+                setIdCardFront(file);
+                setIdCardFrontPreview(reader.result as string);
+            } else {
+                setIdCardBack(file);
+                setIdCardBackPreview(reader.result as string);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -72,14 +108,19 @@ export default function SignUp() {
             return;
         }
 
-
-
-
         // Phone validation (if provided)
         if (form.phoneNumber && !validatePhoneNumber(form.phoneNumber)) {
             setError("Please enter a valid phone number");
             setIsLoading(false);
             return;
+        }
+
+        if (form.email.length > 0) {
+            if (!validateEmail(form.email)) {
+                setError("Please enter a valid email address");
+                setIsLoading(false);
+                return;
+            }
         }
 
         // Password validation
@@ -89,12 +130,16 @@ export default function SignUp() {
             return;
         }
 
-        if (!validateEmail(form.email)) {
-            setError("Please enter a valid email address");
-        }
         // Password match validation
         if (form.password !== form.confirm) {
             setError("PINs do not match");
+            setIsLoading(false);
+            return;
+        }
+
+        // ID Card validation
+        if (!idCardFront || !idCardBack) {
+            setError("Please upload both front and back sides of your ID card");
             setIsLoading(false);
             return;
         }
@@ -113,7 +158,17 @@ export default function SignUp() {
             const sanitizedPhone = form.phoneNumber ? sanitizeInput(form.phoneNumber) : "";
             const sanitizedPassword = form.password.trim();
 
-            const result = await signUp(sanitizedName, form.country, sanitizedPhone, sanitizedEmail, sanitizedPassword);
+            // Create form data for file upload
+            const formData = new FormData();
+            formData.append('name', sanitizedName);
+            formData.append('country', form.country);
+            formData.append('phoneNumber', sanitizedPhone);
+            formData.append('email', sanitizedEmail);
+            formData.append('password', sanitizedPassword);
+            formData.append('idCardFront', idCardFront);
+            formData.append('idCardBack', idCardBack);
+
+            const result = await signUp(formData);
 
             if (result.success) {
                 toast.success("Sign up successful! login Now");
@@ -212,6 +267,74 @@ export default function SignUp() {
                             >
                                 {showConfirm ? <Eye size={18} /> : <EyeOff size={18} />}
                             </button>
+                        </div>
+                    </div>
+
+                    {/* ID Card Front */}
+                    <div>
+                        <label className="block text-gray-300 mb-1">ID Card Front Side</label>
+                        <div className="relative">
+                            <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg"
+                                className="hidden"
+                                ref={frontFileInputRef}
+                                onChange={(e) => handleFileChange(e, 'front')}
+                                required
+                            />
+                            <div
+                                onClick={() => frontFileInputRef.current?.click()}
+                                className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardFrontPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
+                            >
+                                {idCardFrontPreview ? (
+                                    <div className="relative w-full">
+                                        <img src={idCardFrontPreview} alt="ID Card Front" className="w-full h-32 object-contain" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
+                                            <p className="text-white text-sm">Click to change</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-gray-400">
+                                        <Upload size={24} />
+                                        <p className="mt-2 text-sm">Upload front side of ID card</p>
+                                        <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ID Card Back */}
+                    <div>
+                        <label className="block text-gray-300 mb-1">ID Card Back Side</label>
+                        <div className="relative">
+                            <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg"
+                                className="hidden"
+                                ref={backFileInputRef}
+                                onChange={(e) => handleFileChange(e, 'back')}
+                                required
+                            />
+                            <div
+                                onClick={() => backFileInputRef.current?.click()}
+                                className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardBackPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
+                            >
+                                {idCardBackPreview ? (
+                                    <div className="relative w-full">
+                                        <img src={idCardBackPreview} alt="ID Card Back" className="w-full h-32 object-contain" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
+                                            <p className="text-white text-sm">Click to change</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-gray-400">
+                                        <Upload size={24} />
+                                        <p className="mt-2 text-sm">Upload back side of ID card</p>
+                                        <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
