@@ -135,7 +135,7 @@ const Orders: React.FC = () => {
 
                     toast.success('Order status updated successfully');
                 } else {
-                    toast.error(resData.message);
+                    toast.error(resData.error);
                 }
 
 

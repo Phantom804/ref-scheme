@@ -113,7 +113,7 @@ const Withdraw: React.FC = () => {
 
                     toast.success('Withdrawal status updated successfully');
                 } else {
-                    toast.error(resData.message);
+                    toast.error(resData.error);
                 }
 
 
