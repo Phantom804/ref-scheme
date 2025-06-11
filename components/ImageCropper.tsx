@@ -62,7 +62,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ image, onCropComplete, onCa
             image={image}
             crop={crop}
             zoom={zoom}
-            aspect={undefined}
+            aspect={3 / 2}
             onCropChange={onCropChange}
             onZoomChange={onZoomChange}
             onCropComplete={onCropCompleteCallback}
@@ -74,7 +74,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ image, onCropComplete, onCa
           <label className="block text-gray-300 mb-1 text-sm">Zoom</label>
           <input
             type="range"
-            min={0.6}
+            min={1}
             max={5}
             step={0.1}
             value={zoom}
