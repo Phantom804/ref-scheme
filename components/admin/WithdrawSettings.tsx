@@ -84,20 +84,21 @@ function WithdrawSettings() {
                     <div className="space-y-6 p-6"> {/* Added padding to Card content */}
                         <div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="swithdrawimit" className="block text-sm font-medium text-gray-300 mb-1">
-                                        Withdraw Limit
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="minWithdrawPercent"
-                                        value={minWithdrawPercent}
-                                        onChange={(e) => setminWithdrawPercent(parseFloat(e.target.value))}
-                                        className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="Enter withdrawl limit percentage"
-                                        disabled={isLoading || isSaving}
-                                    />
-                                </div>
+                               <div className="relative">
+  <label htmlFor="minWithdrawPercent" className="block text-sm font-medium text-gray-300 mb-1">
+    Withdraw Limit
+  </label>
+  <input
+    type="number"
+    id="minWithdrawPercent"
+    value={minWithdrawPercent}
+    onChange={(e) => setminWithdrawPercent(parseFloat(e.target.value))}
+    className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 pr-10 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+    placeholder="Enter withdrawal limit percentage"
+    disabled={isLoading || isSaving}
+  />
+  <span className="absolute right-3 top-[38px] text-gray-400 text-sm pointer-events-none">%</span>
+</div>
 
                                 <div>
                                     <label htmlFor="swithdrawimit" className="block text-sm font-medium text-gray-300 mb-1">
