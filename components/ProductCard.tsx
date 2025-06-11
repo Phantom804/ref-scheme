@@ -19,12 +19,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ id = "1", name, price, image,
         <div className="group relative overflow-hidden rounded-xl product-card-gradient shadow-[0_4px_20px_rgba(123,97,255,0.15)] transition-all duration-300 hover:translate-y-[-4px] border border-[#32293d]">
 
             <div className="w-full h-32 sm:h-36 md:h-40 overflow-hidden">
+                    <Link href={`/product/${id}`} >
                 <img
                     src={image}
                     alt={name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-
+</Link>
             </div>
 
             <div className="relative z-10 p-3 sm:p-4 flex flex-col">
