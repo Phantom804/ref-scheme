@@ -41,7 +41,7 @@ const Users: React.FC = () => {
         isBlocked: 'all'
     });
     const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-    const usersPerPage = 5;
+    const usersPerPage = 10;
     const [isPhoneNumbersDialogOpen, setIsPhoneNumbersDialogOpen] = useState(false);
     const [allPhoneNumbers, setAllPhoneNumbers] = useState<string[]>([]);
     const [numbersLoading, setNumbersLoading] = useState(false);
@@ -165,7 +165,14 @@ const Users: React.FC = () => {
         setSearchTimeout(timeout);
     };
 
-    const handleDownloadReceipts = async (idCardFrontUrl: string, idCardBackUrl: string) => {
+    const handleDownloadReceipts = async (idCardFrontUrl: string, idCardBackUrl: string, phoneNumber: string | null) => {
+
+
+
+        if (!idCardFrontUrl && !idCardBackUrl) {
+            toast.error("No receipts to download");
+            return
+        }
         const downloadImage = async (url: string, index: string) => {
             if (!url) {
                 toast.error(`Receipt ${index} URL not provided`);
@@ -190,7 +197,7 @@ const Users: React.FC = () => {
                     }
                 }
 
-                const filename = `idcard${index}_${new Date().getTime()}${fileExtension}`;
+                const filename = `idcard${index}_"Num:"${phoneNumber}_${fileExtension}`;
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = filename;
@@ -352,7 +359,7 @@ const Users: React.FC = () => {
                                             <Button
                                                 variant="ghost"
                                                 className="text-[#3B82F6] hover:text-[#3B82F6]/80 p-0"
-                                                onClick={() => handleDownloadReceipts(user.idCardFrontUrl, user.idCardBackUrl)}
+                                                onClick={() => handleDownloadReceipts(user.idCardFrontUrl, user.idCardBackUrl, user.phoneNumber || null)}
                                             >
                                                 <Download className="mr-2 h-4 w-4" />
                                                 Download

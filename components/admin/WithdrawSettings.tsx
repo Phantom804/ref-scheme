@@ -48,7 +48,7 @@ function WithdrawSettings() {
 
         try {
             const response = await fetch('/api/admin/settings', {
-                method: 'POST',
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },

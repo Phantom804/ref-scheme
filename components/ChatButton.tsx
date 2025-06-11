@@ -1,17 +1,38 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Mail, MessageCircle, X } from 'lucide-react';
 
 const ChatButton = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [email, setEmail] = useState('');
+    const [whatsappNumber, setWhatsappNumber] = useState('');
     const pathname = usePathname();
 
     // Don't show on admin pages
     if (pathname.startsWith('/admin')) {
         return null;
     }
+
+    useEffect(() => {
+    
+
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                if (res.ok) {
+                    setEmail(data.email || '');
+                    setWhatsappNumber(data.whatsappNumber || '');
+                }
+            } catch (error) {
+                console.error('Failed to fetch app settings:', error);
+            }
+        };
+
+        fetchSettings();
+    }, []);
 
     return (
         <div className="fixed bottom-17 right-6 z-50">
@@ -20,7 +41,7 @@ const ChatButton = () => {
                 <div className="flex flex-col gap-3 mb-4 animate-in fade-in slide-in-from-bottom duration-300">
                     {/* WhatsApp option */}
                     <a
-                        href="https://wa.me/3182851140"
+                        href={"https://wa.me/" + whatsappNumber}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 bg-green-500 text-white p-3 rounded-full hover:bg-green-600 transition-colors"
@@ -31,7 +52,7 @@ const ChatButton = () => {
 
                     {/* Email option */}
                     <a
-                        href="mailto:asimarain123@gmail.com"
+                        href={`mailto:${email}`}
                         className="flex items-center gap-2 bg-blue-500 text-white p-3 rounded-full hover:bg-blue-600 transition-colors"
                     >
                         <Mail size={20} />

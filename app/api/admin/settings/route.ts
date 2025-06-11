@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AppSetting, IAppSetting } from '@/lib/models/AppSetting';
+import { AppSetting } from '@/lib/models/AppSetting';
 import { connectToDatabase } from '@/lib/mongoose';
 
-// Helper function to get or create AppSetting
-async function getOrCreateAppSettings(): Promise<IAppSetting> {
-    await connectToDatabase();
-    let appSettings = await AppSetting.findOne({});
-    if (!appSettings) {
-        appSettings = new AppSetting({
-            withdrawLimit: 0 // Default value, can be adjusted
-        });
-        await appSettings.save();
-    }
-    return appSettings;
-}
 
 export async function GET(req: NextRequest) {
     try {
-        const appSettings = await getOrCreateAppSettings();
+        await connectToDatabase();
+        let appSettings = await AppSetting.findOne({});
         return NextResponse.json(appSettings, { status: 200 });
     } catch (error) {
         console.error('Error fetching app settings:', error);
@@ -25,15 +14,42 @@ export async function GET(req: NextRequest) {
     }
 }
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
     try {
         await connectToDatabase();
         const body = await req.json();
-        const { minWithdrawPercent, minWithdrawAmount } = body;
+        const { minWithdrawPercent, minWithdrawAmount, requireIdCardUpload, email, whatsappNumber } = body;
+
+
+        let UpdateData: any = {};
+
+        if (minWithdrawPercent !== undefined) {
+            UpdateData.minWithdrawPercent = minWithdrawPercent;
+        }
+
+        if (minWithdrawAmount !== undefined) {
+            UpdateData.minWithdrawAmount = minWithdrawAmount;
+        }
+
+        if (requireIdCardUpload !== undefined) {
+            UpdateData.requireIdCardUpload = requireIdCardUpload;
+        }
+
+        if (email !== undefined) {
+            UpdateData.email = email;
+        }
+
+        if (whatsappNumber !== undefined) {
+            UpdateData.whatsappNumber = whatsappNumber;
+        }
 
         const appSettings = await AppSetting.findOneAndUpdate(
             {},
-            { $set: { minWithdrawPercent, minWithdrawAmount } },
+            {
+                $set: {
+                    ...UpdateData
+                }
+            },
         );
 
         return NextResponse.json(appSettings, { status: 200 });

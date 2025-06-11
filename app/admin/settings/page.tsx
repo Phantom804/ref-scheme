@@ -1,17 +1,14 @@
 "use client";
 
 import React, { useState } from 'react';
-
 import { Button } from '@/components/ui/button';
-
 import TermsAndCondition from '@/components/admin/TermsAndCondition';
 import WithdrawSettings from '@/components/admin/WithdrawSettings';
-WithdrawSettings
+import SettingsTab from '@/components/admin/SettingsTab';
 
 const Settings: React.FC = () => {
 
-    const [activeTab, setActiveTab] = useState<'referral' | 'terms'>('referral');
-
+    const [activeTab, setActiveTab] = useState<'referral' | 'terms' | 'withdraw' | 'app'>('referral');
 
     return (
         <div className="pt-16 md:ml-16 lg:ml-64 transition-all duration-300">
@@ -33,7 +30,13 @@ const Settings: React.FC = () => {
                             >
                                 Terms
                             </Button>
-
+                            <Button
+                                variant="ghost"
+                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${activeTab === 'app' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
+                                onClick={() => setActiveTab('app')}
+                            >
+                                Others
+                            </Button>
 
                         </div>
                     </div>
@@ -43,10 +46,13 @@ const Settings: React.FC = () => {
 
             {activeTab === 'terms' ? (
                 <TermsAndCondition />
+            ) : activeTab === 'app' ? (
+                <SettingsTab />
             ) : (
                 <WithdrawSettings />
             )}
         </div>
+
     );
 };
 

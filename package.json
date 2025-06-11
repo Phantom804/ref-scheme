@@ -41,6 +41,7 @@
     "react-d3-tree": "^3.6.6",
     "react-day-picker": "^9.4.3",
     "react-dom": "^18.2.0",
+    "react-easy-crop": "^5.4.2",
     "recharts": "^2.15.3",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",

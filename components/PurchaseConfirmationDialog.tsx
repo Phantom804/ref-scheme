@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Check, X, Upload, Image as ImageIcon } from "lucide-react";
+import { Check, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 

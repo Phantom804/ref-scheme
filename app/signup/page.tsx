@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import TermsModal from "@/components/TermsModal";
 import PhoneInput from "@/components/ui/phone-input";
-
+import ImageCropper from "@/components/ImageCropper";
 
 import { toast } from "sonner";
 
@@ -26,9 +26,15 @@ export default function SignUp() {
     const frontFileInputRef = useRef<HTMLInputElement>(null);
     const backFileInputRef = useRef<HTMLInputElement>(null);
 
+    // Image cropping states
+    const [cropperImage, setCropperImage] = useState<string>("");
+    const [showCropper, setShowCropper] = useState(false);
+    const [currentCropType, setCurrentCropType] = useState<'front' | 'back'>('front');
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [requireIdCardUpload, setRequireIdCardUpload] = useState(false);
     const router = useRouter();
     const { signUp, isAuthenticated } = useAuth();
 
@@ -38,6 +44,24 @@ export default function SignUp() {
             router.push('/');
         }
     }, [isAuthenticated]);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const response = await fetch('/api/settings');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch settings');
+                }
+                const data = await response.json();
+                if (response.ok) {
+                    setRequireIdCardUpload(data.requireIdCardUpload || false);
+                }
+            } catch (error) {
+                console.error('Failed to fetch app settings:', error);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const handlePhoneChange = (phone: string, country: string) => {
         setForm({ ...form, phoneNumber: phone, country: country });
@@ -82,18 +106,36 @@ export default function SignUp() {
             return;
         }
 
-        // Create preview
+        // Create preview and open cropper
         const reader = new FileReader();
         reader.onloadend = () => {
-            if (type === 'front') {
-                setIdCardFront(file);
-                setIdCardFrontPreview(reader.result as string);
-            } else {
-                setIdCardBack(file);
-                setIdCardBackPreview(reader.result as string);
-            }
+            // Set the image for cropping and show the cropper
+            setCropperImage(reader.result as string);
+            setCurrentCropType(type);
+            setShowCropper(true);
         };
         reader.readAsDataURL(file);
+    };
+
+    // Handle crop completion
+    const handleCropComplete = (croppedImage: { file: Blob; url: string }) => {
+        if (currentCropType === 'front') {
+            // Convert Blob to File
+            const file = new File([croppedImage.file], 'front-id-card.jpg', { type: 'image/jpeg' });
+            setIdCardFront(file);
+            setIdCardFrontPreview(croppedImage.url);
+        } else {
+            // Convert Blob to File
+            const file = new File([croppedImage.file], 'back-id-card.jpg', { type: 'image/jpeg' });
+            setIdCardBack(file);
+            setIdCardBackPreview(croppedImage.url);
+        }
+        setShowCropper(false);
+    };
+
+    // Handle crop cancellation
+    const handleCropCancel = () => {
+        setShowCropper(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -137,8 +179,8 @@ export default function SignUp() {
             return;
         }
 
-        // ID Card validation
-        if (!idCardFront || !idCardBack) {
+        // ID Card validation (conditional)
+        if (requireIdCardUpload && (!idCardFront || !idCardBack)) {
             setError("Please upload both front and back sides of your ID card");
             setIsLoading(false);
             return;
@@ -165,8 +207,10 @@ export default function SignUp() {
             formData.append('phoneNumber', sanitizedPhone);
             formData.append('email', sanitizedEmail);
             formData.append('password', sanitizedPassword);
-            formData.append('idCardFront', idCardFront);
-            formData.append('idCardBack', idCardBack);
+            if (requireIdCardUpload) {
+                if (idCardFront) formData.append('idCardFront', idCardFront);
+                if (idCardBack) formData.append('idCardBack', idCardBack);
+            }
 
             const result = await signUp(formData);
 
@@ -199,7 +243,7 @@ export default function SignUp() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-gray-300 mb-1">Name</label>
+                        <label className="block text-gray-300 mb-1">Name as per ID</label>
                         <Input
                             type="text"
                             placeholder="Enter your name"
@@ -271,73 +315,78 @@ export default function SignUp() {
                     </div>
 
                     {/* ID Card Front */}
-                    <div>
-                        <label className="block text-gray-300 mb-1">ID Card Front Side</label>
-                        <div className="relative">
-                            <Input
-                                type="file"
-                                accept="image/jpeg,image/png,image/jpg"
-                                className="hidden"
-                                ref={frontFileInputRef}
-                                onChange={(e) => handleFileChange(e, 'front')}
-                                required
-                            />
-                            <div
-                                onClick={() => frontFileInputRef.current?.click()}
-                                className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardFrontPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
-                            >
-                                {idCardFrontPreview ? (
-                                    <div className="relative w-full">
-                                        <img src={idCardFrontPreview} alt="ID Card Front" className="w-full h-32 object-contain" />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
-                                            <p className="text-white text-sm">Click to change</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-gray-400">
-                                        <Upload size={24} />
-                                        <p className="mt-2 text-sm">Upload front side of ID card</p>
-                                        <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    {requireIdCardUpload && (
+                        <>
 
-                    {/* ID Card Back */}
-                    <div>
-                        <label className="block text-gray-300 mb-1">ID Card Back Side</label>
-                        <div className="relative">
-                            <Input
-                                type="file"
-                                accept="image/jpeg,image/png,image/jpg"
-                                className="hidden"
-                                ref={backFileInputRef}
-                                onChange={(e) => handleFileChange(e, 'back')}
-                                required
-                            />
-                            <div
-                                onClick={() => backFileInputRef.current?.click()}
-                                className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardBackPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
-                            >
-                                {idCardBackPreview ? (
-                                    <div className="relative w-full">
-                                        <img src={idCardBackPreview} alt="ID Card Back" className="w-full h-32 object-contain" />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
-                                            <p className="text-white text-sm">Click to change</p>
-                                        </div>
+                            <div>
+                                <label className="block text-gray-300 mb-1">ID Card Front Side</label>
+                                <div className="relative">
+                                    <Input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/jpg"
+                                        className="hidden"
+                                        ref={frontFileInputRef}
+                                        onChange={(e) => handleFileChange(e, 'front')}
+                                        required
+                                    />
+                                    <div
+                                        onClick={() => frontFileInputRef.current?.click()}
+                                        className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardFrontPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
+                                    >
+                                        {idCardFrontPreview ? (
+                                            <div className="relative w-full">
+                                                <img src={idCardFrontPreview} alt="ID Card Front" className="w-full h-32 object-contain" />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
+                                                    <p className="text-white text-sm">Click to change</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center text-gray-400">
+                                                <Upload size={24} />
+                                                <p className="mt-2 text-sm">Upload front side of ID card</p>
+                                                <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-gray-400">
-                                        <Upload size={24} />
-                                        <p className="mt-2 text-sm">Upload back side of ID card</p>
-                                        <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
-                                    </div>
-                                )}
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
+                            {/* ID Card Back */}
+                            <div>
+                                <label className="block text-gray-300 mb-1">ID Card Back Side</label>
+                                <div className="relative">
+                                    <Input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/jpg"
+                                        className="hidden"
+                                        ref={backFileInputRef}
+                                        onChange={(e) => handleFileChange(e, 'back')}
+                                        required
+                                    />
+                                    <div
+                                        onClick={() => backFileInputRef.current?.click()}
+                                        className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardBackPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
+                                    >
+                                        {idCardBackPreview ? (
+                                            <div className="relative w-full">
+                                                <img src={idCardBackPreview} alt="ID Card Back" className="w-full h-32 object-contain" />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
+                                                    <p className="text-white text-sm">Click to change</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center text-gray-400">
+                                                <Upload size={24} />
+                                                <p className="mt-2 text-sm">Upload back side of ID card</p>
+                                                <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </>
+                    )}
                     {/* Terms */}
                     <div className="flex items-center mt-6 mb-3">
                         <Checkbox
@@ -390,6 +439,15 @@ export default function SignUp() {
                 isOpen={showTermsModal}
                 onClose={() => setShowTermsModal(false)}
             />
+
+            {/* Image Cropper Modal */}
+            {showCropper && (
+                <ImageCropper
+                    image={cropperImage}
+                    onCropComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                />
+            )}
         </div>
     );
 }
