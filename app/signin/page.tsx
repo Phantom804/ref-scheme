@@ -83,7 +83,7 @@ export default function SignIn() {
         }
     };
     const handleForgetPin = () => {
-        toast.message("Chat With Admin By chatbox If You Forgate Old Pin")
+        toast.message("Chat with admin if you forgate old pin")
     }
 
 

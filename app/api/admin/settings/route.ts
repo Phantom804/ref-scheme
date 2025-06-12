@@ -6,7 +6,7 @@ import { connectToDatabase } from '@/lib/mongoose';
 export async function GET(req: NextRequest) {
     try {
         await connectToDatabase();
-        let appSettings = await AppSetting.findOne({});
+        let appSettings = await AppSetting.findOne({}, 'minWithdrawAmount minWithdrawPercent requireIdCardUpload email whatsappNumber messanger');
         return NextResponse.json(appSettings, { status: 200 });
     } catch (error) {
         console.error('Error fetching app settings:', error);
@@ -18,7 +18,8 @@ export async function PATCH(req: NextRequest) {
     try {
         await connectToDatabase();
         const body = await req.json();
-        const { minWithdrawPercent, minWithdrawAmount, requireIdCardUpload, email, whatsappNumber } = body;
+        const { minWithdrawPercent, minWithdrawAmount, requireIdCardUpload, email, whatsappNumber, messanger } = body;
+
 
 
         let UpdateData: any = {};
@@ -41,6 +42,9 @@ export async function PATCH(req: NextRequest) {
 
         if (whatsappNumber !== undefined) {
             UpdateData.whatsappNumber = whatsappNumber;
+        }
+        if (messanger !== undefined) {
+            UpdateData.messanger = messanger;
         }
 
         const appSettings = await AppSetting.findOneAndUpdate(

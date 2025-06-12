@@ -16,14 +16,17 @@ const PaymentMethodSchema = new Schema<IPaymentMethod>(
         accountTitle: {
             type: String,
             required: [true, 'Account title is required'],
+            index: true
         },
         accountNumber: {
             type: String,
             required: [true, 'Account number is required'],
+            index: true
         },
         bankName: {
             type: String,
             required: [true, 'Bank name is required'],
+            index: true
         },
         logoUrl: {
             type: String,

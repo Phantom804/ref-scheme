@@ -8,7 +8,19 @@ import { connectToDatabase } from '@/lib/mongoose';
 export async function PATCH(req: NextRequest) {
     try {
 
-        // Get token from cookie
+        const body = await req.json();
+        const { id, name, email, phoneNumber, oldpin, newpin } = body;
+        if (!id) {
+            return NextResponse.json({ success: false, message: "User ID required." }, { status: 400 });
+        }
+
+        if (oldpin && newpin) {
+            if (oldpin === newpin) {
+                return NextResponse.json({ success: false, message: "New pin and old pin can't be same." }, { status: 400 });
+            }
+        }
+
+
         const token = req.cookies.get('auth_token')?.value;
 
         if (!token) {
@@ -53,11 +65,9 @@ export async function PATCH(req: NextRequest) {
             return response;
         }
 
-        const body = await req.json();
-        const { id, name, email, phoneNumber, oldpin, newpin } = body;
-        if (!id) {
-            return NextResponse.json({ success: false, message: "User ID required." }, { status: 400 });
-        }
+
+
+
 
         // Update info
         if (name) user.name = name;
@@ -66,7 +76,7 @@ export async function PATCH(req: NextRequest) {
 
         if (oldpin && newpin) {
             if (oldpin !== user.password) {
-                return NextResponse.json({ success: false, message: "Old password is incorrect." }, { status: 400 });
+                return NextResponse.json({ success: false, message: "Old pin is incorrect." }, { status: 400 });
             }
 
             user.password = newpin;

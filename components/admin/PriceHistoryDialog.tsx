@@ -3,11 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon, Loader2, Trash2, ClockIcon } from "lucide-react";
 import { toast } from "sonner";
-import ViewPriceHistory from './ViewPriceHistory';
-import AddPriceHistory from './AddPriceHistory';
-import { PriceHistoryItem, PriceHistoryDialogProps } from './Types/PriceHistoryTypes';
+
+interface PriceHistoryItem {
+    _id: string;
+    productId: string;
+    price: number;
+    date: string;
+}
+
+interface PriceHistoryDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    productId: string;
+}
 
 const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogProps) => {
     const [mode, setMode] = useState<'view' | 'add'>('view');
@@ -18,9 +35,6 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
     const [time, setTime] = useState<string>('12:00:00');
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-
-
 
     useEffect(() => {
         if (isOpen && productId) {
@@ -80,15 +94,14 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
         // Prevent the default behavior which would close the dialog
         e.preventDefault();
 
+        if (!price || !date) {
+            toast.error('Please provide both price and date');
+            return;
+        }
+
         setSubmitting(true);
         try {
             if (mode === 'add') {
-                if (!price || !date) {
-                    toast.error('Please provide both price and date');
-                    setSubmitting(false);
-                    return;
-                }
-
                 // Create new price history entry
                 const response = await fetch('/api/admin/price-history', {
                     method: 'POST',
@@ -109,13 +122,7 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                 if (response.ok) {
                     toast.success('Price history added successfully');
                 }
-            } else if (mode === 'view') {
-                if (!price || !date || !selectedHistoryId) {
-                    toast.error('Please select a price history entry to update');
-                    setSubmitting(false);
-                    return;
-                }
-
+            } else {
                 // Update existing price history entry
                 const response = await fetch('/api/admin/price-history', {
                     method: 'PATCH',
@@ -134,6 +141,9 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
 
                 toast.success('Price history updated successfully');
             }
+
+            // Refresh price history data
+            await fetchPriceHistory();
         } catch (error) {
             console.error('Error saving price history:', error);
             toast.error('Failed to save price history');
@@ -142,19 +152,11 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
         }
     };
 
-    const resetForm = () => {
-        if (mode === 'add') {
-            setPrice('');
-            setDate(new Date());
-            setTime('12:00:00');
-        } else if (priceHistory.length > 0) {
-            handleSelectChange(priceHistory[0]._id);
-        }
-    };
+   
 
-    const toggleMode = (newMode: 'view' | 'add') => {
-        setMode(newMode);
-        resetForm();
+    const toggleMode = () => {
+        setMode(mode === 'view' ? 'add' : 'view');
+        
     };
 
     const handleDelete = async () => {
@@ -206,38 +208,19 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                 onClose();
             }
         }}>
-            <DialogContent className="md:w-[70vw] max-w-[90vw] sm:max-w-[90vw] sm:w[90vw] max-h-[90vh] bg-gray-900 border-gray-800 overflow-y-auto overflow-x-hidden">
+            <DialogContent className="sm:max-w-[425px] bg-gray-900 border-gray-800">
                 <DialogHeader>
-                    <DialogTitle className='text-white'>
-                        {mode === 'view' ? 'Price History' :
-                            mode === 'add' ? 'Add Price History' :
-                                'Automate Price Changes'}
-                    </DialogTitle>
+                    <DialogTitle className='text-white'>{mode === 'view' ? 'Price History' : 'Add Price History'}</DialogTitle>
                 </DialogHeader>
 
-
-
-                <div className="flex justify-between items-center mb-8 overflow-y-auto">
-                    <div className="overflow-y-auto pb-2 ">
-                        <div className="flex gap-2 bg-[#1A1F2C] rounded-lg p-1 min-w-max">
-                            <Button
-                                variant="ghost"
-                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${mode === 'view' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                                onClick={() => toggleMode('view')}
-                            >
-                                View History
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className={`rounded-md px-3 sm:px-4 md:px-6 py-1 sm:py-2 text-xs sm:text-sm md:text-base ${mode === 'add' ? 'bg-[#9b87f5] text-white' : 'text-gray-400'}`}
-                                onClick={() => toggleMode('add')}
-                            >
-                                Add New Price
-                            </Button>
-
-
-                        </div>
-                    </div>
+                <div className="flex justify-between items-center mb-4">
+                    <Button
+                        variant="outline"
+                        onClick={toggleMode}
+                        size="sm"
+                    >
+                        {mode === 'view' ? 'Add New Price' : 'View History'}
+                    </Button>
                 </div>
 
                 {loading ? (
@@ -247,26 +230,108 @@ const PriceHistoryDialog = ({ isOpen, onClose, productId }: PriceHistoryDialogPr
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {mode === 'view' ? (
-                            <ViewPriceHistory
-                                priceHistory={priceHistory}
-                                selectedHistoryId={selectedHistoryId}
-                                price={price}
-                                submitting={submitting}
-                                handleSelectChange={handleSelectChange}
-                                handleDelete={handleDelete}
-                                setPrice={setPrice}
+                        {mode === 'view' && priceHistory.length > 0 && (
+                            <div className="space-y-2">
+                                <label htmlFor="history-select" className="text-sm font-medium text-white">
+                                    Select Date
+                                </label>
+                                <div className="flex gap-2">
+                                    <Select value={selectedHistoryId} onValueChange={handleSelectChange}>
+                                        <SelectTrigger className='text-white'>
+                                            <SelectValue placeholder="Select a date " />
+                                        </SelectTrigger>
+                                        <SelectContent className='text-white'>
+                                            {priceHistory.map((item) => {
+                                                const itemDate = new Date(item.date);
+                                                const formattedDateTime = format(itemDate, 'PPP') + ' ' +
+                                                    itemDate.getHours().toString().padStart(2, '0') + ':' +
+                                                    itemDate.getMinutes().toString().padStart(2, '0');
+                                                return (
+                                                    <SelectItem className='text-white' key={item._id} value={item._id}>
+                                                        {formattedDateTime}
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleDelete}
+                                        disabled={!selectedHistoryId || submitting}
+                                        className="bg-white"
+                                    >
+                                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {mode === 'add' && (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium text-white block mb-2">
+                                        Date
+                                    </label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal",
+                                                    !date && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={date} onSelect={setDate} autoFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium text-white block mb-2">
+                                        Time
+                                    </label>
+                                    <div className="relative">
+                                        <Input
+                                            type="time"
+                                            step="1"
+                                            value={time}
+                                            onChange={handleTimeChange}
+                                            className="peer appearance-none ps-9 text-white [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                        />
+                                        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                                            <ClockIcon size={16} aria-hidden="true" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
+                        <div className="space-y-2">
+                            <label htmlFor="price-input" className="text-sm font-medium text-white">
+                                Price
+                            </label>
+                            <Input className='text-white'
+                                id="price-input"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
+                                placeholder="Enter price"
                             />
-                        ) : (
-                            <AddPriceHistory
-                                date={date}
-                                time={time}
-                                price={price}
-                                submitting={submitting}
-                                setDate={setDate}
-                                handleTimeChange={handleTimeChange}
-                                setPrice={setPrice}
-                            />
+                        </div>
+
+                        {mode === 'view' && priceHistory.length === 0 && (
+                            <div className="text-center py-4 text-gray-500">
+                                No price history available for this product.
+                            </div>
                         )}
                     </div>
                 )}

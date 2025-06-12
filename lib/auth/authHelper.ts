@@ -1,9 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
-import { connectToDatabase } from '@/lib/mongoose';
-import { User } from '@/lib/models/User';
-import { VerificationToken } from '@/lib/models/VerificationToken';
+
 
 
 interface JwtPayload {
@@ -45,40 +42,4 @@ export const verifyToken = (token: string): JwtPayload | null => {
     }
 };
 
-export const generateVerificationToken = async (userId: string): Promise<string> => {
-    await connectToDatabase();
 
-    const token = randomBytes(32).toString('hex');
-    const expires = new Date();
-    expires.setHours(expires.getHours() + 24); // Token expires in 24 hours
-
-    // Remove any existing token for the user
-    await VerificationToken.findOneAndDelete({ userId });
-
-    // Create new token
-    await VerificationToken.create({
-        token,
-        expires,
-        userId
-    });
-
-    return token;
-};
-
-export const verifyEmail = async (token: string): Promise<boolean> => {
-    await connectToDatabase();
-
-    const verificationToken = await VerificationToken.findOne({ token }).exec();
-
-    if (!verificationToken || verificationToken.expires < new Date()) {
-        return false;
-    }
-
-    // Update user
-    await User.findByIdAndUpdate(verificationToken.userId, { isVerified: true });
-
-    // Delete token
-    await VerificationToken.findByIdAndDelete(verificationToken.id);
-
-    return true;
-}; 

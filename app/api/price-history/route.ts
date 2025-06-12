@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
+
+now.setUTCHours(23, 59, 59, 999);
     let startDate = new Date();
 
     switch (range) {

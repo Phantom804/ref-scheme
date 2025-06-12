@@ -16,6 +16,7 @@ export interface IAppSetting extends Document {
     requireIdCardUpload: boolean;
     email: string;
     whatsappNumber: string;
+    messanger: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -46,10 +47,12 @@ const TermSchema = new Schema<ITerm>(
 const AppSettingSchema = new Schema<IAppSetting>(
     {
         minWithdrawPercent: {
-            type: Number
+            type: Number,
+            default: 0
         },
         minWithdrawAmount: {
-            type: Number
+            type: Number,
+            default: 0
         },
         terms: {
             type: [TermSchema],
@@ -61,12 +64,18 @@ const AppSettingSchema = new Schema<IAppSetting>(
         },
         email: {
             type: String,
-            default: "3182851140",
+            default: "example@gmail.com",
+            index: true
         },
         whatsappNumber: {
             type: String,
             default: "example@gmail.com",
+        },
+        messanger: {
+            type: String,
+            default: "@zack",
         }
+
     },
     { timestamps: true }
 )

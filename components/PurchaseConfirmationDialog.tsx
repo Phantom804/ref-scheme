@@ -185,6 +185,7 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                         </Button>
                         <Button
                             className="flex-1 bg-transparent border border-gray-600 hover:bg-gray-800 text-white"
+                            variant="outline"
                             onClick={onClose}
                         >
                             Cancel

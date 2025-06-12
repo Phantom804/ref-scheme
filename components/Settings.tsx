@@ -101,7 +101,7 @@ const Settings = () => {
     };
 
     const handleForgetPin = () => {
-        toast.message("Chat with admin by chatbox if you forgate old pin")
+        toast.message("Chat with admin if you forgate old pin")
     }
 
 
@@ -179,7 +179,7 @@ const Settings = () => {
                                 <div className="relative flex items-center bg-[#2A1B3D] rounded-xl focus-within:ring-2 focus-within:ring-blue-600">
                                     <input
                                         type={showCurrentPin ? "text" : "password"}
-                                        className="bg-transparent border-none text-white placeholder-gray-500 py-3 px-4 pr-10 w-full focus:outline-none"
+                                        className="bg-[#2A1B3D] border-none text-white placeholder-gray-500 py-3 px-4 rounded-xl focus:ring-2 focus:ring-blue-600"
                                         placeholder="Enter PIN"
                                         value={currentPin}
                                         onChange={(e) => setCurrentPin(e.target.value)}

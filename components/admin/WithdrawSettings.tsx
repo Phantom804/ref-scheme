@@ -27,6 +27,7 @@ function WithdrawSettings() {
                     throw new Error('Failed to fetch settings');
                 }
                 const data = await response.json();
+console.log(data);
                 setminWithdrawPercent(data.minWithdrawPercent);
                 setminWithdrawAmount(data.minWithdrawAmount);
                 setinitialwithdrawLimit(data.minWithdrawPercent);
@@ -81,53 +82,60 @@ function WithdrawSettings() {
             <div className="col-span-12 lg:col-span-9">
 
                 <Card>
-                    <div className="space-y-6 p-6"> {/* Added padding to Card content */}
-                        <div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                               <div className="relative">
-  <label htmlFor="minWithdrawPercent" className="block text-sm font-medium text-gray-300 mb-1">
-    Withdraw Limit
-  </label>
-  <input
-    type="number"
-    id="minWithdrawPercent"
-    value={minWithdrawPercent}
-    onChange={(e) => setminWithdrawPercent(parseFloat(e.target.value))}
-    className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 pr-10 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-    placeholder="Enter withdrawal limit percentage"
-    disabled={isLoading || isSaving}
-  />
-  <span className="absolute right-3 top-[38px] text-gray-400 text-sm pointer-events-none">%</span>
-</div>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                            <span className="ml-2 text-gray-400">Loading ...</span>
+                        </div>
+                    ) : (
+                        <div className="space-y-6 p-6"> {/* Added padding to Card content */}
+                            <div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="relative">
+                                        <label htmlFor="minWithdrawPercent" className="block text-sm font-medium text-gray-300 mb-1">
+                                            Withdraw Limit (%)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="minWithdrawPercent"
+                                            value={minWithdrawPercent || ''}
+                                            onChange={(e) => setminWithdrawPercent(parseFloat(e.target.value))}
+                                            className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 pr-10 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                            placeholder="Enter withdrawal limit percentage"
+                                            disabled={isLoading || isSaving}
+                                        />
+                                        <span className="absolute right-3 top-[38px] text-gray-400 text-sm pointer-events-none">%</span>
+                                    </div>
 
-                                <div>
-                                    <label htmlFor="swithdrawimit" className="block text-sm font-medium text-gray-300 mb-1">
-                                        Minimun Withdraw in Number
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="minWithdrawAmount"
-                                        value={minWithdrawAmount}
-                                        onChange={(e) => setminWithdrawAmount(parseFloat(e.target.value))}
-                                        className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="Enter minimum withdrawl in numbers"
-                                        disabled={isLoading || isSaving}
-                                    />
+                                    <div>
+                                        <label htmlFor="swithdrawimit" className="block text-sm font-medium text-gray-300 mb-1">
+                                            Minimun Withdraw in Number
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="minWithdrawAmount"
+                                            value={minWithdrawAmount || ''}
+                                            onChange={(e) => setminWithdrawAmount(parseFloat(e.target.value))}
+                                            className="bg-gray-800 text-white text-sm rounded-lg block w-full p-2.5 border border-gray-700 focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                            placeholder="Enter minimum withdrawl in numbers"
+                                            disabled={isLoading || isSaving}
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex justify-end pt-4">
-                            <Button
-                                onClick={handleSaveSettings}
-                                disabled={isLoading || isSaving || minWithdrawPercent === initialwithdrawLimit}
-                            >
-                                <Save size={16} className="mr-2" />
-                                Save Changes
+                            <div className="flex justify-end pt-4">
+                                <Button
+                                    onClick={handleSaveSettings}
+                                    disabled={isLoading || isSaving || minWithdrawPercent === initialwithdrawLimit}
+                                >
+                                    <Save size={16} className="mr-2" />
+                                    Save Changes
 
-                            </Button>
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </Card>
 
             </div>

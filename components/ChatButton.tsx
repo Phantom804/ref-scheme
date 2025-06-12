@@ -8,15 +8,16 @@ const ChatButton = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [email, setEmail] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
+    const [messanger, setMessanger] = useState('');
     const pathname = usePathname();
 
-    // Don't show on admin pages
+
     if (pathname.startsWith('/admin')) {
         return null;
     }
 
     useEffect(() => {
-    
+
 
         const fetchSettings = async () => {
             try {
@@ -25,6 +26,7 @@ const ChatButton = () => {
                 if (res.ok) {
                     setEmail(data.email || '');
                     setWhatsappNumber(data.whatsappNumber || '');
+                    setMessanger(data.messanger || '');
                 }
             } catch (error) {
                 console.error('Failed to fetch app settings:', error);
@@ -53,10 +55,20 @@ const ChatButton = () => {
                     {/* Email option */}
                     <a
                         href={`mailto:${email}`}
-                        className="flex items-center gap-2 bg-blue-500 text-white p-3 rounded-full hover:bg-blue-600 transition-colors"
+                        className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-full transition-colors"
                     >
                         <Mail size={20} />
                         <span className="text-sm font-medium">Email</span>
+                    </a>
+                    {/* adding facebook messanger option */}
+                    <a
+                        href={`https://m.me/${messanger}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 bg-[#0084FF] text-white p-3 rounded-full hover:bg-[#006fe0] transition-colors"
+                    >
+                        <MessageCircle size={20} />
+                        <span className="text-sm font-medium">Messenger</span>
                     </a>
                 </div>
             )}

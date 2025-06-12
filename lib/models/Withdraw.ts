@@ -14,7 +14,7 @@ interface IWithdraw extends Document {
 }
 
 const WithdrawSchema = new Schema<IWithdraw>({
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     userName: { type: String, required: true },
     phoneNumber: { type: String, required: true },
     accountTitle: { type: String, required: true },
@@ -23,9 +23,10 @@ const WithdrawSchema = new Schema<IWithdraw>({
     amount: { type: Number, required: true },
     status: {
         type: String, required: true, enum: ['Pending', 'Approved', 'Cancelled'],
-        default: 'Pending'
+        default: 'Pending',
+        index: true
     },
-    requestedOn: { type: Date, default: Date.now },
+    requestedOn: { type: Date, default: Date.now, index: true },
     completedOn: { type: Date }
 });
 

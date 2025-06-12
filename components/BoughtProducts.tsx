@@ -184,7 +184,7 @@ function BoughtProducts() {
                                         <TableCell className="text-red-500 text-xs">Referral Limit Reached</TableCell>
                                     )}</span></TableCell>
                                     <TableCell>{product.quantity}</TableCell>
-                                    <TableCell>{product.referralCode}</TableCell>
+                                    <TableCell>{product.referralCode || '-'}</TableCell>
                                     <TableCell className="text-[#3B82F6]">{product.price}</TableCell>
                                     <TableCell>{product.boughtOn}</TableCell>
                                     <TableCell>
@@ -221,7 +221,7 @@ function BoughtProducts() {
                                                 </Button>
                                             )
                                         ) : (
-                                            <span className="text-gray-500 text-xs">Not Available</span>
+                                            <span className="text-gray-500 text-xs">Not available until order is completed</span>
                                         )}
                                     </TableCell>
                                 </TableRow>

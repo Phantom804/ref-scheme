@@ -317,7 +317,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                     />
                                 </div>
 
-                               <div className="relative">
+                                <div className="relative">
                                     <label htmlFor="referralCommission" className="block text-sm font-medium text-gray-300 mb-1">
                                         Referral Commission (%)
                                     </label>
@@ -328,9 +328,9 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                         placeholder="0"
                                         value={formData.referralCommission}
                                         onChange={handleFormChange}
-   
-  />
-  <span className="absolute right-3 top-[38px] text-gray-400 text-sm pointer-events-none">%</span>
+
+                                    />
+                                    <span className="absolute right-3 top-[38px] text-gray-400 text-sm pointer-events-none">%</span>
                                 </div>
 
 

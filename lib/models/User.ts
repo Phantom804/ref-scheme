@@ -23,18 +23,17 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
     {
         name: { type: String },
-        email: { type: String },
-        phoneNumber: { type: String, required: true },
+        email: { type: String, index: true },
+        phoneNumber: { type: String, required: true, index: true },
         password: { type: String, required: true },
-        referralCode: { type: String },
-        referredByCode: { type: String },
+        referralCode: { type: String, index: true },
         country: { type: String },
         totalEarning: { type: Number, default: 0 },
         isBlock: { type: Boolean, default: false },
         isVerified: { type: Boolean, default: false },
         idCardFrontUrl: { type: String },
         idCardBackUrl: { type: String },
-        role: { type: String, enum: ['user', 'admin', 'superAdmin'], default: 'user' },
+        role: { type: String, enum: ['user', 'admin', 'superAdmin'], default: 'user', index: true },
     },
     {
         timestamps: true,

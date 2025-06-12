@@ -4,9 +4,9 @@ import { verifyToken } from '@/lib/auth/authHelper';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
 import { Product } from '@/lib/models/Product';
+import { customAlphabet } from 'nanoid';
 import { v2 as cloudinary } from 'cloudinary';
-import mongoose from 'mongoose';
-
+import { ObjectId } from 'mongodb';
 
 
 
@@ -191,32 +191,144 @@ export async function POST(request: NextRequest) {
         const buyer = user.phoneNumber;
 
 
-        if (referralCode && referralCode === user.referralCode) {
-            return NextResponse.json(
-                { success: false, message: 'You cannot use your own referral code.' },
-                { status: 400 }
-            );
-        }
 
-        if (referralCode) {
-            const previousOrderWithReferral = await Order.findOne({ userId: user._id, referralCode: referralCode, productId: productId });
-            // we need to check here 
-            if (previousOrderWithReferral) {
-                return NextResponse.json(
-                    { success: false, message: "You can only use referral code once, and you've already used it." },
-                    { status: 400 }
-                );
-            }
-        }
         let commission;
         productId
         const totalPrice = quantity * price;
 
         if (referralCode) {
-            //only fetch referral comission from app settings
-            const refSettings = await Product.findOne({ _id: productId }, 'referralCommission').exec();
+            // Validate referral code before proceeding
+            // Similar to referral-check API validation
+            const aggregationResult = await User.aggregate([
+                { $match: { referralCode: referralCode } },
+                { $limit: 1 },
+                {
+                    $lookup: {
+                        from: 'orders',
+                        let: { userId: '$_id' },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ['$userId', '$$userId'] },
+                                            { $eq: ['$productId', new ObjectId(productId)] },
+                                            { $eq: ['$status', 'Completed'] }
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'userProductOrders'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'products',
+                        let: { productId: new ObjectId(productId) },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ['$_id', '$$productId']
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'productInfo'
+                    }
+                },
+                { $unwind: '$productInfo' },
+                {
+                    $lookup: {
+                        from: 'orders',
+                        let: { referralCode: referralCode, productId: new ObjectId(productId) },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ['$referralCode', '$$referralCode'] },
+                                            { $eq: ['$productId', '$$productId'] }
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'referralOrdersCount'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'orders',
+                        let: { currentUserId: new ObjectId(decoded.id), referralCode: referralCode, productId: new ObjectId(productId) },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ['$userId', '$$currentUserId'] },
+                                            { $eq: ['$productId', '$$productId'] },
+                                            { $eq: ['$referralCode', '$$referralCode'] }
+                                        ]
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'currentUserReferralOrders'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        referralCode: 1,
+                        productReferralLimit: '$productInfo.referralLimt',
+                        hasUserBoughtProduct: { $gt: [{ $size: '$userProductOrders' }, 0] },
+                        referralUsageCount: { $size: '$referralOrdersCount' },
+                        hasCurrentUserUsedReferral: { $gt: [{ $size: '$currentUserReferralOrders' }, 0] },
+                        referralCommission: '$productInfo.referralCommission'
+                    }
+                }
+            ]);
 
-            commission = Number((price * (refSettings.referralCommission / 100)).toFixed(2));
+            const referralUser = aggregationResult[0];
+
+            if (!referralUser) {
+                return NextResponse.json({ success: false, message: 'Referral Code Does Not Exist' }, { status: 404 });
+            }
+
+            if (!referralUser.productReferralLimit && referralUser.productReferralLimit !== 0) {
+                return NextResponse.json({ success: false, message: 'Product not found or invalid productId.' }, { status: 404 });
+            }
+
+            // Check if the user is using their own referral code
+            if (decoded.id === referralUser._id.toString()) {
+                return NextResponse.json(
+                    { success: false, message: 'You cannot use your own referral code.' },
+                    { status: 400 }
+                );
+            }
+
+            // Check if the user who owns the referral code has bought this product
+            if (!referralUser.hasUserBoughtProduct) {
+                return NextResponse.json({ success: false, message: 'The owner of this referral should have purchased it first.' }, { status: 400 });
+            }
+
+            // Check if the referral limit for the product has been reached
+            if (referralUser.productReferralLimit !== undefined && referralUser.referralUsageCount >= referralUser.productReferralLimit) {
+                return NextResponse.json({ success: false, message: 'Referral limit for this product has been reached.' }, { status: 400 });
+            }
+
+            // Check if the current user has already used a referral code for a product
+            if (referralUser.hasCurrentUserUsedReferral) {
+                return NextResponse.json(
+                    { success: false, message: "You can only use a referral code once for a product." },
+                    { status: 400 }
+                );
+            }
+
+            // If all validations pass, calculate commission
+            commission = Number((price * (referralUser.referralCommission / 100)).toFixed(2));
         }
 
 
@@ -268,10 +380,11 @@ export async function POST(request: NextRequest) {
             );
         });
 
-        // Generate a transaction ID
-        const transactionId = `ID${Math.floor(100000 + Math.random() * 900000)}`;
 
-        // Create a new order in the database
+        const nanoid = customAlphabet('ABCDMNZ0123456789', 6);
+        const transactionId = `${nanoid()}`;
+
+
         const newOrder = await Order.create({
             userId,
             buyer,

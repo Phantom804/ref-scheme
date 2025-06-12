@@ -65,6 +65,7 @@ export default function ProductDetail() {
     const fetchPriceData = async (range: 'yearly' | '6months' | 'monthly') => {
         const res = await fetch(`/api/price-history?productId=${PRODUCT_ID}&range=${range}`);
         const data = await res.json();
+console.log({data})
 
         setPriceData(data);
     };

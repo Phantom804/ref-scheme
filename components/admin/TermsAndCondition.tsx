@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Plus, Save, X } from 'lucide-react';
+import { Pencil, Trash2, Plus, Save, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -153,7 +153,12 @@ function TermsAndCondition() {
             )}
 
             {loading ? (
-                <div className="text-center py-8 text-gray-400">Loading terms...</div>
+
+                <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                    <span className="ml-2 text-gray-400">Loading ...</span>
+                </div>
+
             ) : terms.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">No terms found. Add your first term!</div>
             ) : (

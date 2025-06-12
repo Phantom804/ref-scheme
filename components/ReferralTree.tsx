@@ -47,13 +47,7 @@ const ReferralTree: React.FC = ({ }) => {
     const [loadedNodes, setLoadedNodes] = useState<Record<string, boolean>>({});
 
     const rootUser = theRootUser;
-    // Redirect to login if not authenticated
-    useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
-            toast.error('Please sign in to view your referral tree');
-            // You can add redirection logic here if needed
-        }
-    }, [isLoading, isAuthenticated]);
+ 
 
     if (isLoading) {
         return (
@@ -62,18 +56,6 @@ const ReferralTree: React.FC = ({ }) => {
             </div>
         );
     }
-
-    if (!isAuthenticated || !user) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
-                <h1 className="text-2xl font-bold">Please sign in to view your referral tree</h1>
-                <Button asChild>
-                    <a href="/signin">Sign In</a>
-                </Button>
-            </div>
-        );
-    }
-
 
     // Function to convert a user to a tree node
     const userToTreeNode = (user: ReferralUser, hasChildren = false): TreeNode => ({
@@ -234,17 +216,18 @@ const ReferralTree: React.FC = ({ }) => {
                     fill="#FFFFFF"
                     stroke="#E5E7EB"
                     strokeWidth={1}
+                    onClick={() => {
+                        navigator.clipboard.writeText(node.name);
+                    }}
                 />
-                // disable pointer envent
+
                 <text
                     x="0"
                     y="53"
                     textAnchor="middle"
-                    style={{ fill: '#1F2937', fontSize: '11px', cursor: "none", fontFamily: 'inter', letterSpacing: 1, textDecoration: 'none' }}
-                    onClick={() => {
-                        navigator.clipboard.writeText(node.name);
-                    }}
+                    style={{ fill: '#1F2937', fontSize: '11px', cursor: "pointer", fontFamily: 'inter', letterSpacing: 1.2, textDecoration: 'none' }}
                 >
+                    
                     {node.name}
                 </text>
             </g>
@@ -273,9 +256,8 @@ const ReferralTree: React.FC = ({ }) => {
                                 data={treeData}
                                 translate={{ x: dimensions.width / 2, y: dimensions.height / 3 }}
                                 orientation="vertical"
-                              nodeSize={{ x: 220, y: 120 }} // More spacing between nodes
-separation={{ siblings: 2, nonSiblings: 3 }} // Increased multipliers
-
+                                nodeSize={{ x: dimensions.width < 768 ? 150 : 200, y: dimensions.width < 768 ? 90 : 100 }}
+                                separation={{ siblings: dimensions.width < 768 ? 1.5 : 2, nonSiblings: dimensions.width < 768 ? 2 : 2.5 }}
 
                                 renderCustomNodeElement={renderCustomNode}
                                 pathFunc="step"

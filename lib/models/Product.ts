@@ -15,19 +15,16 @@ export interface IProduct extends Document {
     updatedAt: Date;
 }
 
-// Mongoose document with _id property
-interface ProductDocument extends Document {
-    _id: Schema.Types.ObjectId;
-}
+
 
 const ProductSchema = new Schema<IProduct>(
     {
-        name: { type: String, required: true },
+        name: { type: String, required: true, index: true },
         price: { type: Number, required: true },
-        category: { type: String, required: true },
-        referralLimt: { type: Number, required: true },
+        category: { type: String, required: true, index: true },
+        referralLimt: { type: Number, required: true, index: true },
         referralCommission: { type: Number, required: true },
-        isLocked: { type: Boolean, default: false },
+        isLocked: { type: Boolean, default: false, index: true },
         description: { type: String, required: true },
         imageUrl: { type: String, default: null },
     },
@@ -38,5 +35,4 @@ const ProductSchema = new Schema<IProduct>(
 
 
 
-// Use existing model or create a new one (for Next.js hot reloading in development)
 export const Product = models.Product || model<IProduct>('Product', ProductSchema);

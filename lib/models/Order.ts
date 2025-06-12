@@ -1,5 +1,4 @@
 import { Schema, model, models, Document } from 'mongoose';
-import { IProduct } from './Product';
 
 export interface IOrder extends Document {
     id: string;
@@ -30,19 +29,20 @@ export interface IOrder extends Document {
 
 const OrderSchema = new Schema<IOrder>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+        productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true, index: true },
         productName: { type: String, required: true },
-        transactionId: { type: String, required: true },
+        transactionId: { type: String, required: true, index: true },
         buyer: { type: String },
         commission: { type: String },
         quantity: { type: Number, required: true },
-        referralCode: { type: String },
+        referralCode: { type: String, index: true },
         price: { type: Number, required: true },
         status: {
             type: String,
             enum: ['Pending', 'Completed', 'Cancelled'],
-            default: 'Pending'
+            default: 'Pending',
+            index: true
         },
         receiptUrl: { type: String, required: true },
         // Delivery related fields

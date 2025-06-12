@@ -2,9 +2,9 @@
 import { Schema, model } from 'mongoose';
 
 const PriceHistorySchema = new Schema({
-    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true, index: true },
     price: { type: Number, required: true },
-    date: { type: Date, required: true },
+    date: { type: Date, required: true, index: true },
 });
 
 const PriceHistory = model('PriceHistory', PriceHistorySchema);

@@ -108,6 +108,8 @@ const Dashboard: React.FC = () => {
                                 router.push('/admin/Orders'); // Replace with your actual orders page path
                             } else if (stat.title === 'Total Products') {
                                 router.push('/admin/products'); // Replace with your actual products page path
+                            } else if (stat.title === 'Total Users') {
+                                router.push('/admin/users'); // Replace with your actual products page path
                             }
                         }}
                     >
