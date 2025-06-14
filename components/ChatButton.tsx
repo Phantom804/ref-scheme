@@ -3,38 +3,29 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Mail, MessageCircle, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext'
 
 const ChatButton = () => {
+    const { appSettings, isLoading: settingsLoading } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [email, setEmail] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [messanger, setMessanger] = useState('');
     const pathname = usePathname();
 
-
     if (pathname.startsWith('/admin')) {
         return null;
     }
 
+
+
     useEffect(() => {
-
-
-        const fetchSettings = async () => {
-            try {
-                const res = await fetch('/api/settings');
-                const data = await res.json();
-                if (res.ok) {
-                    setEmail(data.email || '');
-                    setWhatsappNumber(data.whatsappNumber || '');
-                    setMessanger(data.messanger || '');
-                }
-            } catch (error) {
-                console.error('Failed to fetch app settings:', error);
-            }
-        };
-
-        fetchSettings();
-    }, []);
+        if (!settingsLoading && appSettings) {
+            setEmail((appSettings as any)?.email || '');
+            setWhatsappNumber((appSettings as any)?.whatsappNumber || '');
+            setMessanger((appSettings as any)?.messanger || '');
+        }
+    }, [appSettings, settingsLoading]);
 
     return (
         <div className="fixed bottom-17 right-6 z-50">

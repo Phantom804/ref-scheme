@@ -80,8 +80,8 @@ export async function GET(
 
         return NextResponse.json({
             success: true,
-            totalEarning: `PKR ${Number(totalEarning)}`,
-            pendingCommission: `PKR ${Number(pendingCommission)}`,
+            totalEarning: `PKR ${Number(totalEarning).toFixed(2)}`,
+            pendingCommission: `PKR ${Number(pendingCommission).toFixed(2)}`,
             purchasedProductsCount,
             totalInvestment
         });

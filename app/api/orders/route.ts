@@ -3,7 +3,6 @@ import { Order } from '@/lib/models/Order';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
-import { Product } from '@/lib/models/Product';
 import { customAlphabet } from 'nanoid';
 import { v2 as cloudinary } from 'cloudinary';
 import { ObjectId } from 'mongodb';
@@ -23,7 +22,6 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
         const userId = searchParams.get('userId') || '';
-
         const referralCode = searchParams.get('referralCode') || '';
 
         const skip = (page - 1) * limit;
@@ -33,31 +31,22 @@ export async function GET(request: NextRequest) {
         // Build search query
         const searchQuery: any = {};
 
-        // Filter by userId if provided
         if (userId) {
             searchQuery.userId = userId;
 
         }
 
-
-        // Prepare the query pipeline
         let orderQuery = Order.find(searchQuery)
             .sort({ createdAt: -1 })
             .populate({ path: 'productId', select: 'referralLimt price', strictPopulate: false });
 
 
-
-        // We don't need product name filtering for user dashboard
-        // Just get the total count and apply pagination
         const totalOrders = await Order.countDocuments(searchQuery);
 
-        // Apply pagination
         const orders = await orderQuery.skip(skip).limit(limit).exec();
 
 
-        // Already handled pagination and counting above
 
-        // Format the response based on order type
         const formattedOrders = await Promise.all(orders.map(async order => {
             // Base order data
             const baseOrder = {
@@ -90,9 +79,6 @@ export async function GET(request: NextRequest) {
                 });
 
             }
-
-
-
 
             return {
                 ...baseOrder,
@@ -148,9 +134,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Connect to the database
+
         await connectToDatabase();
-        // Find user by ID from token
+
         const user = await User.findById(decoded.id).select('-password').exec();
 
         if (!user) {
@@ -164,7 +150,7 @@ export async function POST(request: NextRequest) {
         if (user.isBlocked === true) {
             const response = NextResponse.json(
                 { success: false, message: 'Your account is blocked my admin.' },
-                { status: 403 } // Consider 403 Forbidden instead of 404
+                { status: 403 }
             );
 
             response.cookies.set({
@@ -178,7 +164,6 @@ export async function POST(request: NextRequest) {
             return response;
         }
 
-        // Parse the form data
         const formData = await request.formData();
         const receipt = formData.get('receipt') as File;
         const productId = formData.get('productId') as string;
@@ -197,8 +182,6 @@ export async function POST(request: NextRequest) {
         const totalPrice = quantity * price;
 
         if (referralCode) {
-            // Validate referral code before proceeding
-            // Similar to referral-check API validation
             const aggregationResult = await User.aggregate([
                 { $match: { referralCode: referralCode } },
                 { $limit: 1 },
@@ -327,12 +310,10 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // If all validations pass, calculate commission
             commission = Number((price * (referralUser.referralCommission / 100)).toFixed(2));
         }
 
 
-        // Validate required fields
         if (!receipt || !productId || !productName || isNaN(quantity) || isNaN(price)) {
             return NextResponse.json(
                 { success: false, message: 'Missing required fields' },
@@ -340,7 +321,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate file type
         const fileType = receipt.type;
         if (!['image/jpeg', 'image/png', 'image/jpg'].includes(fileType)) {
             return NextResponse.json(
@@ -349,7 +329,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate file size (max 1MB)
         if (receipt.size > 1024 * 1024) {
             return NextResponse.json(
                 { success: false, message: 'File size must be less than 1MB' },
@@ -357,15 +336,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Convert the file to a buffer
         const arrayBuffer = await receipt.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // Convert buffer to base64 string for Cloudinary
         const base64String = buffer.toString('base64');
         const dataURI = `data:${fileType};base64,${base64String}`;
 
-        // Upload the image to Cloudinary
         const uploadResult = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload(
                 dataURI,

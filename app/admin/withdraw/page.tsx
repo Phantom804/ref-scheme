@@ -86,8 +86,7 @@ const Withdraw: React.FC = () => {
             setTotalPages(data.totalPages);
             setTotalWithdrawals(data.totalWithdrawals);
         } catch (error) {
-            console.error('Error fetching withdrawals:', error);
-            toast.error('Failed to load withdrawal requests. Please try again.');
+            toast.error("Network or Server issue! please check you internet");
         } finally {
             setLoading(false);
         }

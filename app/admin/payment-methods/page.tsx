@@ -32,7 +32,7 @@ const PaymentMethods: React.FC = () => {
                 setPaymentMethods(data.paymentMethods);
             }
         } catch (error) {
-            console.error('Error fetching payment methods:', error);
+            toast.error("Network or Server issue! please check you internet");
         } finally {
             setLoading(false);
         }

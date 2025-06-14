@@ -72,8 +72,7 @@ function BoughtProducts() {
             setTotalPages(data.totalPages);
             setTotalOrders(data.totalOrders);
         } catch (error) {
-            console.error('Error fetching orders:', error);
-            toast.error('Failed to load orders. Please try again.');
+            console.error('Error fetching orders:');
         } finally {
             setLoading(false);
         }
@@ -93,7 +92,6 @@ function BoughtProducts() {
 
     // Submit delivery request
     const handleDeliverySubmit = async (deliveryDetails: any) => {
-        console.log("request data to delivery api: ", deliveryDetails);
         try {
             setLoading(true);
             const response = await fetch('/api/orders/delivery', {
@@ -108,7 +106,6 @@ function BoughtProducts() {
             });
 
             const data = await response.json();
-            console.log("response from delivery api: ", data);
 
             if (response.ok) {
                 toast.success('Delivery request submitted successfully');
@@ -123,20 +120,19 @@ function BoughtProducts() {
                 toast.error(data.message || 'Failed to submit delivery request');
             }
         } catch (error) {
-            console.error('Error submitting delivery request:', error);
             toast.error('An error occurred while submitting your delivery request');
         } finally {
             setLoading(false);
         }
     };
 
-    // Initial data fetch
+
     useEffect(() => {
         fetchOrders();
     }, []);
     return (
         <div className="bg-[#1A1F2C] rounded-lg overflow-hidden">
-            {/* Delivery Request Dialog */}
+
             {selectedOrder && (
                 <DeliveryRequestDialog
                     open={isDeliveryDialogOpen}

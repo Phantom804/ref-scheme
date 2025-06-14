@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/auth/authHelper';
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@/lib/models/User';
 import { AppSetting } from '@/lib/models/AppSetting';
+import { rateLimiter } from '@/lib/rateLimiter';
 
 
 export async function GET(request: NextRequest) {
@@ -15,7 +16,6 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Verify token
     const decoded = verifyToken(token);
     if (!decoded) {
         return NextResponse.json(
@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    // Get total count for pagination
+
     const totalWithdrawals = await Withdraw.countDocuments({ userId: decoded.id });
 
-    // Get paginated withdrawals
+
     const withdrawals = await Withdraw.find({ userId: decoded.id })
         .sort({ requestedOn: -1 })
         .skip(skip)
@@ -65,6 +65,22 @@ export async function POST(request: NextRequest) {
         );
     }
 
+
+    const rateLimit = await rateLimiter(request, 'withdraw', { windowSec: 600, max: 10, });
+
+    if (!rateLimit.success) {
+        const headers = new Headers({
+            'Retry-After': rateLimit.retryAfter.toString(),
+        });
+
+        const retryAfterMin = Math.ceil(rateLimit.retryAfter / 60)
+
+        return NextResponse.json(
+            { success: false, message: `Suspicious activity detected. Try again after ${retryAfterMin} min.` },
+            { status: 429, headers }
+        );
+    }
+
     // Verify token
     const decoded = verifyToken(token);
     if (!decoded) {
@@ -87,7 +103,7 @@ export async function POST(request: NextRequest) {
         const minWithdrawAmount = withdrawSettings?.minWithdrawAmount;
         if (minWithdrawAmount > amount) {
             return NextResponse.json(
-                { success: false, message: `Withdraw amount should be atleast ${minWithdrawAmount} and ${withdrawSettings?.minWithdrawPercent}% of your total Earning` },
+                { success: false, message: `Withdraw amount should be at least ${minWithdrawAmount} and ${withdrawSettings?.minWithdrawPercent}% of your total earnings.` },
                 { status: 400 }
             );
 
@@ -128,7 +144,7 @@ export async function POST(request: NextRequest) {
         // Deduct amount from user's total earning
         user.totalEarning -= amount;
 
-        // Save both withdrawal request and updated user balance
+
         await Promise.all([
             withdrawal.save(),
             user.save()

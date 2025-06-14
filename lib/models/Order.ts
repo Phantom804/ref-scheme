@@ -6,14 +6,13 @@ export interface IOrder extends Document {
     productId: Schema.Types.ObjectId;
     productName: string;
     transactionId: string;
-    buyer: { type: String };
-    commission: { type: String };
+    buyer: { type: string };
+    commission: { type: string };
     quantity: number;
     referralCode: string;
     price: number;
     status: 'Pending' | 'Completed' | 'Cancelled';
     receiptUrl: string;
-    // Delivery related fields
     deliveryRequested: boolean;
     deliveryStatus: 'Pending' | 'In Transit' | 'Delivered';
     deliveryAddress: string;

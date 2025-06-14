@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
-import { Order } from '@/lib/models/Order';
-import { Product } from '@/lib/models/Product';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { ObjectId } from 'mongodb';
+import { rateLimiter } from '@/lib/rateLimiter';
 
 export async function POST(req: NextRequest) {
+
     await connectToDatabase();
 
     const token = req.cookies.get('auth_token')?.value;
@@ -15,6 +15,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
             { success: false, message: 'Not authenticated' },
             { status: 401 }
+        );
+    }
+
+
+    const rateLimit = await rateLimiter(req, 'referralcheck', { windowSec: 600, max: 12, });
+
+    if (!rateLimit.success) {
+        const headers = new Headers({
+            'Retry-After': rateLimit.retryAfter.toString(),
+        });
+
+        const retryAfterMin = Math.ceil(rateLimit.retryAfter / 60)
+
+        return NextResponse.json(
+            { success: false, message: `Suspicious activity detected. Try again after ${retryAfterMin} min.` },
+            { status: 429, headers }
         );
     }
 

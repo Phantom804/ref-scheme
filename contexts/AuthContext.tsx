@@ -11,8 +11,18 @@ type User = {
     role?: string;
 }
 
+type AppSettings = {
+    minWithdrawPercent?: Number;
+    minWithdrawAmount?: Number;
+    requireIdCardUpload: boolean;
+    email: string;
+    whatsappNumber: string;
+    messanger: string;
+}
+
 type AuthContextType = {
     user: User | null;
+    appSettings: AppSettings | null;
     isLoading: boolean;
     isAuthenticated: boolean;
     isAdmin: boolean;
@@ -27,7 +37,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            if (res.ok) {
+                setAppSettings(data.appSettings);
+            }
+        } catch (error) {
+            console.error('Failed to fetch app settings:', error);
+        }
+    };
 
     // Fetch user session on mount and after auth state changes
     const fetchUserSession = async () => {
@@ -45,13 +69,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error) {
             console.error('Failed to fetch user session:', error);
             setUser(null);
-        } finally {
-            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchUserSession();
+        const fetchData = async () => {
+            try {
+                await Promise.all([fetchUserSession(), fetchSettings()]);
+            } catch (error) {
+                console.error('Error during initial data fetch:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
     }, []);
 
     const signIn = async (phoneNumber: string, password: string) => {
@@ -139,6 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isAuthenticated: !!user,
             isAdmin: user?.role === 'admin' || user?.role === 'superAdmin',
             isSuperAdmin: user?.role === 'superAdmin',
+            appSettings,
             signIn,
             signUp,
             signOut,

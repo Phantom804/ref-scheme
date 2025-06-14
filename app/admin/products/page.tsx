@@ -87,7 +87,7 @@ const AllProducts: React.FC = () => {
             setTotalProducts(data.totalProducts);
         } catch (error) {
             console.error('Error fetching products:', error);
-            toast.error('Failed to load products. Please try again.');
+            toast.error("Network or Server issue! please check you internet");
         } finally {
             setLoading(false);
         }

@@ -113,7 +113,6 @@ export async function GET(request: NextRequest) {
             deliveryAddress: order.deliveryAddress,
             deliveryContactPhone: order.deliveryContactPhone
         }));
-        console.log(formattedOrders)
 
         return NextResponse.json({
             orders: formattedOrders,

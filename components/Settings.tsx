@@ -26,9 +26,8 @@ const Settings = () => {
     const [showCurrentPin, setShowCurrentPin] = useState(false);
     const [showNewPin, setShowNewPin] = useState(false);
     const [showConfirmPin, setShowConfirmPin] = useState(false);
-    const router = useRouter();
 
-    // Update state when user data changes
+
     useEffect(() => {
         const hasChanged = name !== initialValues.name || email !== initialValues.email || phoneNumber !== initialValues.phoneNumber;
         setIsChanged(hasChanged);

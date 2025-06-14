@@ -4,17 +4,17 @@ import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Upload } from "lucide-react";
+import { Eye, EyeOff, Upload, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import TermsModal from "@/components/TermsModal";
 import PhoneInput from "@/components/ui/phone-input";
 import ImageCropper from "@/components/ImageCropper";
-
 import { toast } from "sonner";
 
 export default function SignUp() {
+    const { appSettings, isLoading: settingsLoading, signUp, isAuthenticated } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [checked, setChecked] = useState(false);
@@ -26,7 +26,6 @@ export default function SignUp() {
     const frontFileInputRef = useRef<HTMLInputElement>(null);
     const backFileInputRef = useRef<HTMLInputElement>(null);
 
-    // Image cropping states
     const [cropperImage, setCropperImage] = useState<string>("");
     const [showCropper, setShowCropper] = useState(false);
     const [currentCropType, setCurrentCropType] = useState<'front' | 'back'>('front');
@@ -36,32 +35,16 @@ export default function SignUp() {
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [requireIdCardUpload, setRequireIdCardUpload] = useState(false);
     const router = useRouter();
-    const { signUp, isAuthenticated } = useAuth();
 
 
     useEffect(() => {
+        if (!settingsLoading && appSettings) {
+            setRequireIdCardUpload((appSettings as any)?.requireIdCardUpload || false);
+        }
         if (isAuthenticated) {
             router.push('/');
         }
-    }, [isAuthenticated]);
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const response = await fetch('/api/settings');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch settings');
-                }
-                const data = await response.json();
-                if (response.ok) {
-                    setRequireIdCardUpload(data.requireIdCardUpload || false);
-                }
-            } catch (error) {
-                console.error('Failed to fetch app settings:', error);
-            }
-        };
-        fetchSettings();
-    }, []);
+    }, [appSettings, settingsLoading, isAuthenticated]);
 
     const handlePhoneChange = (phone: string, country: string) => {
         setForm({ ...form, phoneNumber: phone, country: country });
@@ -229,225 +212,235 @@ export default function SignUp() {
 
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br py-1">
-            <div className="rounded-2xl h-[90%] bg-[#1c0f2e]/80 p-8 px-12 shadow-xl w-full max-w-md relative">
+        <>
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br py-1">
+                {
+                    settingsLoading ? (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                            <span className="ml-2 text-gray-400">Loading...</span>
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl h-[90%] bg-[#1c0f2e]/80 p-8 px-12 shadow-xl w-full max-w-md relative">
 
-                <div className="text-white text-2xl font-bold text-center mb-1">Register to our platform</div>
-                <div className="text-gray-400 text-center mb-6 text-sm">Create your account</div>
+                            <div className="text-white text-2xl font-bold text-center mb-1">Register to our platform</div>
+                            <div className="text-gray-400 text-center mb-6 text-sm">Create your account</div>
 
-                {error && (
-                    <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-2 rounded-lg mb-6">
-                        {error}
-                    </div>
+                            {error && (
+                                <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-2 rounded-lg mb-6">
+                                    {error}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-gray-300 mb-1">Name as per ID</label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter your name"
+                                        className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
+                                        value={form.name}
+                                        onChange={e => setForm({ ...form, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-gray-300 mb-1">Phone</label>
+
+                                    <PhoneInput onPhoneChange={handlePhoneChange} country="PK" placeholder="eg : 03181210111" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 mb-1">Email <span className="text-gray-500">(optional)</span></label>
+                                    <Input
+                                        type="email"
+                                        placeholder="Enter your email"
+
+                                        className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
+                                        value={form.email}
+                                        onChange={e => setForm({ ...form, email: e.target.value })}
+
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 mb-1">Pin</label>
+                                    <div className="relative">
+                                        <Input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Enter Pin"
+                                            className="pr-10 bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
+                                            value={form.password}
+                                            onChange={e => setForm({ ...form, password: e.target.value })}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                            onClick={() => setShowPassword((v) => !v)}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-gray-300 mb-1">Confirm Pin</label>
+                                    <div className="relative">
+                                        <Input
+                                            type={showConfirm ? "text" : "password"}
+                                            placeholder="Confirm Pin"
+                                            className="pr-10 bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
+                                            value={form.confirm}
+                                            onChange={e => setForm({ ...form, confirm: e.target.value })}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                            onClick={() => setShowConfirm((v) => !v)}
+                                            tabIndex={-1}
+                                        >
+                                            {showConfirm ? <Eye size={18} /> : <EyeOff size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* ID Card Front */}
+                                {requireIdCardUpload && (
+                                    <>
+
+                                        <div>
+                                            <label className="block text-gray-300 mb-1">ID Card Front Side</label>
+                                            <div className="relative">
+                                                <Input
+                                                    type="file"
+                                                    accept="image/jpeg,image/png,image/jpg"
+                                                    className="hidden"
+                                                    ref={frontFileInputRef}
+                                                    onChange={(e) => handleFileChange(e, 'front')}
+                                                    required
+                                                />
+                                                <div
+                                                    onClick={() => frontFileInputRef.current?.click()}
+                                                    className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardFrontPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
+                                                >
+                                                    {idCardFrontPreview ? (
+                                                        <div className="relative w-full">
+                                                            <img src={idCardFrontPreview} alt="ID Card Front" className="w-full h-32 object-contain" />
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
+                                                                <p className="text-white text-sm">Click to change</p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center text-gray-400">
+                                                            <Upload size={24} />
+                                                            <p className="mt-2 text-sm">Upload front side of ID card</p>
+                                                            <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ID Card Back */}
+                                        <div>
+                                            <label className="block text-gray-300 mb-1">ID Card Back Side</label>
+                                            <div className="relative">
+                                                <Input
+                                                    type="file"
+                                                    accept="image/jpeg,image/png,image/jpg"
+                                                    className="hidden"
+                                                    ref={backFileInputRef}
+                                                    onChange={(e) => handleFileChange(e, 'back')}
+                                                    required
+                                                />
+                                                <div
+                                                    onClick={() => backFileInputRef.current?.click()}
+                                                    className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardBackPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
+                                                >
+                                                    {idCardBackPreview ? (
+                                                        <div className="relative w-full">
+                                                            <img src={idCardBackPreview} alt="ID Card Back" className="w-full h-32 object-contain" />
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
+                                                                <p className="text-white text-sm">Click to change</p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center text-gray-400">
+                                                            <Upload size={24} />
+                                                            <p className="mt-2 text-sm">Upload back side of ID card</p>
+                                                            <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </>
+                                )}
+                                {/* Terms */}
+                                <div className="flex items-center mt-6 mb-3">
+                                    <Checkbox
+                                        id="signup-accept"
+                                        checked={checked}
+                                        onCheckedChange={(val: boolean | "indeterminate") => setChecked(val === true)}
+                                        className="mr-2 accent-purple-800"
+                                    />
+                                    <label htmlFor="signup-accept" className="text-white text-sm" >
+                                        I accept the <span
+
+                                            className="font-bold text-blue-400 cursor-pointer hover:underline"
+                                            onClick={(e) => {
+                                                e.preventDefault();      // 🔒 Prevent label behavior
+                                                e.stopPropagation();     // 🚫 Stop bubbling
+                                                setShowTermsModal(true); // 📦 Open modal
+                                            }}
+                                        >
+                                            terms &amp; conditions.
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    className="w-full mt-3 bg-[#715cff] hover:bg-[#5740b2] text-white font-bold text-base rounded-lg py-2"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="w-5 h-5 border-t-2 border-b-2 border-white rounded-full animate-spin mr-2"></div>
+                                            Registering...
+                                        </div>
+                                    ) : (
+                                        "Register"
+                                    )}
+                                </Button>
+                            </form>
+
+                            <div className="mt-2 text-center text-gray-300 text-sm">
+                                Already have an account?{" "}
+                                <Link href="/signin" className="text-blue-400 underline">
+                                    Sign in
+                                </Link>
+                            </div>
+                        </div>
+
+                    )}
+
+                <TermsModal
+                    isOpen={showTermsModal}
+                    onClose={() => setShowTermsModal(false)}
+                />
+
+                {showCropper && (
+                    <ImageCropper
+                        image={cropperImage}
+                        onCropComplete={handleCropComplete}
+                        onCancel={handleCropCancel}
+                    />
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-gray-300 mb-1">Name as per ID</label>
-                        <Input
-                            type="text"
-                            placeholder="Enter your name"
-                            className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
-                            value={form.name}
-                            onChange={e => setForm({ ...form, name: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-gray-300 mb-1">Phone</label>
-
-                        <PhoneInput onPhoneChange={handlePhoneChange} country="PK" placeholder="eg : 03181210111" />
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-300 mb-1">Email <span className="text-gray-500">(optional)</span></label>
-                        <Input
-                            type="email"
-                            placeholder="Enter your email"
-
-                            className="bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
-                            value={form.email}
-                            onChange={e => setForm({ ...form, email: e.target.value })}
-
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-gray-300 mb-1">Pin</label>
-                        <div className="relative">
-                            <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Enter Pin"
-                                className="pr-10 bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
-                                value={form.password}
-                                onChange={e => setForm({ ...form, password: e.target.value })}
-                                required
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                onClick={() => setShowPassword((v) => !v)}
-                                tabIndex={-1}
-                            >
-                                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-gray-300 mb-1">Confirm Pin</label>
-                        <div className="relative">
-                            <Input
-                                type={showConfirm ? "text" : "password"}
-                                placeholder="Confirm Pin"
-                                className="pr-10 bg-[#372759] border-[#47396d] text-white focus:border-purple-400 placeholder:text-gray-400"
-                                value={form.confirm}
-                                onChange={e => setForm({ ...form, confirm: e.target.value })}
-                                required
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                                onClick={() => setShowConfirm((v) => !v)}
-                                tabIndex={-1}
-                            >
-                                {showConfirm ? <Eye size={18} /> : <EyeOff size={18} />}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* ID Card Front */}
-                    {requireIdCardUpload && (
-                        <>
-
-                            <div>
-                                <label className="block text-gray-300 mb-1">ID Card Front Side</label>
-                                <div className="relative">
-                                    <Input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/jpg"
-                                        className="hidden"
-                                        ref={frontFileInputRef}
-                                        onChange={(e) => handleFileChange(e, 'front')}
-                                        required
-                                    />
-                                    <div
-                                        onClick={() => frontFileInputRef.current?.click()}
-                                        className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardFrontPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
-                                    >
-                                        {idCardFrontPreview ? (
-                                            <div className="relative w-full">
-                                                <img src={idCardFrontPreview} alt="ID Card Front" className="w-full h-32 object-contain" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
-                                                    <p className="text-white text-sm">Click to change</p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center text-gray-400">
-                                                <Upload size={24} />
-                                                <p className="mt-2 text-sm">Upload front side of ID card</p>
-                                                <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* ID Card Back */}
-                            <div>
-                                <label className="block text-gray-300 mb-1">ID Card Back Side</label>
-                                <div className="relative">
-                                    <Input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/jpg"
-                                        className="hidden"
-                                        ref={backFileInputRef}
-                                        onChange={(e) => handleFileChange(e, 'back')}
-                                        required
-                                    />
-                                    <div
-                                        onClick={() => backFileInputRef.current?.click()}
-                                        className={`flex items-center justify-center border-2 border-dashed rounded-lg p-4 cursor-pointer ${idCardBackPreview ? 'border-green-500' : 'border-[#47396d]'} bg-[#372759] hover:border-purple-400`}
-                                    >
-                                        {idCardBackPreview ? (
-                                            <div className="relative w-full">
-                                                <img src={idCardBackPreview} alt="ID Card Back" className="w-full h-32 object-contain" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">
-                                                    <p className="text-white text-sm">Click to change</p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center text-gray-400">
-                                                <Upload size={24} />
-                                                <p className="mt-2 text-sm">Upload back side of ID card</p>
-                                                <p className="text-xs text-gray-500 mt-1">JPG, PNG (max 1MB)</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                        </>
-                    )}
-                    {/* Terms */}
-                    <div className="flex items-center mt-6 mb-3">
-                        <Checkbox
-                            id="signup-accept"
-                            checked={checked}
-                            onCheckedChange={(val: boolean | "indeterminate") => setChecked(val === true)}
-                            className="mr-2 accent-purple-800"
-                        />
-                        <label htmlFor="signup-accept" className="text-white text-sm" >
-                            I accept the <span
-
-                                className="font-bold text-blue-400 cursor-pointer hover:underline"
-                                onClick={(e) => {
-                                    e.preventDefault();      // 🔒 Prevent label behavior
-                                    e.stopPropagation();     // 🚫 Stop bubbling
-                                    setShowTermsModal(true); // 📦 Open modal
-                                }}
-                            >
-                                terms &amp; conditions.
-                            </span>
-                        </label>
-                    </div>
-
-                    <Button
-                        type="submit"
-                        className="w-full mt-3 bg-[#715cff] hover:bg-[#5740b2] text-white font-bold text-base rounded-lg py-2"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <div className="flex items-center justify-center">
-                                <div className="w-5 h-5 border-t-2 border-b-2 border-white rounded-full animate-spin mr-2"></div>
-                                Registering...
-                            </div>
-                        ) : (
-                            "Register"
-                        )}
-                    </Button>
-                </form>
-
-                <div className="mt-2 text-center text-gray-300 text-sm">
-                    Already have an account?{" "}
-                    <Link href="/signin" className="text-blue-400 underline">
-                        Sign in
-                    </Link>
-                </div>
             </div>
-
-            {/* Terms & Conditions Modal */}
-            <TermsModal
-                isOpen={showTermsModal}
-                onClose={() => setShowTermsModal(false)}
-            />
-
-            {/* Image Cropper Modal */}
-            {showCropper && (
-                <ImageCropper
-                    image={cropperImage}
-                    onCropComplete={handleCropComplete}
-                    onCancel={handleCropCancel}
-                />
-            )}
-        </div>
+        </>
     );
 }

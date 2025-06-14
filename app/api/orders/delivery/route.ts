@@ -70,7 +70,6 @@ export async function PATCH(request: NextRequest) {
 
         await order.save();
 
-        console.log('Delivery request submitted for order:', order);
 
         return NextResponse.json({
             success: true,

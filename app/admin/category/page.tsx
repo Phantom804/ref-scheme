@@ -36,7 +36,7 @@ export default function CategoriesPage() {
                 setCategories(data.categories);
             }
         } catch (error) {
-            toast.error('Failed to fetch categories');
+            toast.error("Network or Server issue! please check you internet");
         } finally {
             setLoading(false);
         }

@@ -11,10 +11,8 @@ import BoughtProducts from '@/components/BoughtProducts';
 import RefrenceProducts from '@/components/RefrenceProducts';
 import ReferralTree from '@/components/ReferralTree';
 import WithdrawPanel from '@/components/WithdrawPanel';
-import { Layers, Users, DollarSign, Loader, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Layers, DollarSign, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-
-
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation';

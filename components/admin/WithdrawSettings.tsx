@@ -27,7 +27,6 @@ function WithdrawSettings() {
                     throw new Error('Failed to fetch settings');
                 }
                 const data = await response.json();
-console.log(data);
                 setminWithdrawPercent(data.minWithdrawPercent);
                 setminWithdrawAmount(data.minWithdrawAmount);
                 setinitialwithdrawLimit(data.minWithdrawPercent);

@@ -3,8 +3,9 @@ import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
 import { AppSetting } from '@/lib/models/AppSetting';
 import { v2 as cloudinary } from 'cloudinary';
+import { rateLimiter } from '@/lib/rateLimiter';
 
-// Configure Cloudinary
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -13,7 +14,23 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
     try {
-        // Parse the form data
+
+        const rateLimit = await rateLimiter(req, 'signup', { windowSec: 600, max: 4, });
+
+        if (!rateLimit.success) {
+            const headers = new Headers({
+                'Retry-After': rateLimit.retryAfter.toString(),
+            });
+
+            const retryAfterMin = Math.ceil(rateLimit.retryAfter / 60)
+
+            return NextResponse.json(
+                { success: false, message: `Suspicious activity detected. Try again after ${retryAfterMin} min.` },
+                { status: 429, headers }
+            );
+        }
+
+
         const formData = await req.formData();
 
         const name = formData.get('name') as string;
@@ -24,7 +41,7 @@ export async function POST(req: NextRequest) {
         const idCardFront = formData.get('idCardFront') as File;
         const idCardBack = formData.get('idCardBack') as File;
 
-        // Validate inputs
+
         if (!name || !phoneNumber || !password) {
             return NextResponse.json(
                 { success: false, message: 'Please fill All Required Fields' },
@@ -41,7 +58,6 @@ export async function POST(req: NextRequest) {
         }
 
 
-        // Only validate ID card files if upload is required
         let idCardFrontUrl = "";
         let idCardBackUrl = "";
 

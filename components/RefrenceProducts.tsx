@@ -64,8 +64,7 @@ export default function RefrenceProducts() {
             setTotalOrders(data.totalOrders);
 
         } catch (error) {
-            console.error('Error fetching referral orders:', error);
-            toast.error('Failed to load referral orders. Please try again.');
+            console.error('Error fetching referral orders');
         } finally {
             setLoading(false);
         }

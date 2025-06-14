@@ -12,7 +12,6 @@ import { toast } from 'sonner'
 import { format } from "date-fns";
 
 
-
 interface Product {
     id: string;
     description: string;
@@ -54,7 +53,7 @@ export default function ProductDetail() {
 
                 setProduct(data);
             } catch (error) {
-                toast.error('Failed to load product. Please try again.');
+                console.error('Network issue! please check you internet');
             } finally {
                 setLoading(false);
             }
@@ -65,7 +64,6 @@ export default function ProductDetail() {
     const fetchPriceData = async (range: 'yearly' | '6months' | 'monthly') => {
         const res = await fetch(`/api/price-history?productId=${PRODUCT_ID}&range=${range}`);
         const data = await res.json();
-console.log({data})
 
         setPriceData(data);
     };

@@ -2,9 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
 import { generateToken } from '@/lib/auth/authHelper';
+import { rateLimiter } from '@/lib/rateLimiter';
+
 
 export async function POST(req: NextRequest) {
     try {
+
+        const rateLimit = await rateLimiter(req, 'login', { windowSec: 120, max: 4, });
+
+        if (!rateLimit.success) {
+            const headers = new Headers({
+                'Retry-After': rateLimit.retryAfter.toString(),
+            });
+
+            return NextResponse.json(
+                { success: false, message: `Too many requests. Try again after ${rateLimit.retryAfter} sec.` },
+                { status: 429, headers }
+            );
+        }
+
         const { phoneNumber, password } = await req.json();
 
         // Validate inputs

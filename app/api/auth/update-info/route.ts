@@ -3,10 +3,24 @@ import { generateToken } from '@/lib/auth/authHelper';
 import { verifyToken } from '@/lib/auth/authHelper';
 import { User } from '@/lib/models/User';
 import { connectToDatabase } from '@/lib/mongoose';
-
+import { rateLimiter } from '@/lib/rateLimiter';
 
 export async function PATCH(req: NextRequest) {
     try {
+        const rateLimit = await rateLimiter(req, 'updateprofile', { windowSec: 600, max: 3, });
+
+        if (!rateLimit.success) {
+            const headers = new Headers({
+                'Retry-After': rateLimit.retryAfter.toString(),
+            });
+
+            const retryAfterMin = Math.ceil(rateLimit.retryAfter / 60)
+
+            return NextResponse.json(
+                { success: false, message: `Too many profile update requests. Try again after ${retryAfterMin} minutes.` },
+                { status: 429, headers }
+            );
+        }
 
         const body = await req.json();
         const { id, name, email, phoneNumber, oldpin, newpin } = body;

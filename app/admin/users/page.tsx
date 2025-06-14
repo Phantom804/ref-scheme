@@ -63,7 +63,7 @@ const Users: React.FC = () => {
                     setAllPhoneNumbers(data.phoneNumbers);
                 } catch (error) {
 
-                    toast.error('Failed to load all phone numbers.');
+                    toast.error("Network or Server issue! please check you internet");
                 } finally {
                     setNumbersLoading(false);
                 }

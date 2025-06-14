@@ -32,10 +32,9 @@ async function uploadImageToCloudinary(imageFile: File) {
 
 export async function POST(request: NextRequest) {
     try {
-        // Connect to the database
+
         await connectToDatabase();
 
-        // Parse form data
         const formData = await request.formData();
         const name = formData.get('name') as string;
         const price = parseFloat(formData.get('price') as string);

@@ -5,7 +5,6 @@ import Tree from 'react-d3-tree';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 
 
 
@@ -29,25 +28,16 @@ type TreeNode = {
 
 const ReferralTree: React.FC = ({ }) => {
 
-    // State to store the tree data
     const [treeData, setTreeData] = useState<TreeNode | null>(null);
-    // State to track dimensions of the container
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-    // State to track loading state
     const [Loading, setLoading] = useState(false);
 
-    const { user, isLoading, isAuthenticated } = useAuth();
-
+    const { user, isLoading } = useAuth();
     const [theRootUser, settheRootUser] = useState<ReferralUser>({ name: user?.name || '', buyer: user?.phoneNumber || '', referralCode: user?.referralCode || '' })
-    // Ref for the container element
+
     const containerRef = useRef<HTMLDivElement>(null);
-
-
-    // Map to track loaded nodes to prevent refetching
     const [loadedNodes, setLoadedNodes] = useState<Record<string, boolean>>({});
-
     const rootUser = theRootUser;
- 
 
     if (isLoading) {
         return (
@@ -127,17 +117,12 @@ const ReferralTree: React.FC = ({ }) => {
             const data = await response.json();
 
             if (data.success) {
-                // Mark this node as loaded
                 setLoadedNodes(prev => ({ ...prev, [referralCode]: true }));
-
-                // Update the tree data with the new children
                 setTreeData(prevData => {
                     if (!prevData) return null;
 
-                    // Create a deep copy of the tree data
                     const newData = JSON.parse(JSON.stringify(prevData));
 
-                    // Find the parent node in the tree
                     const findAndUpdateNode = (node: TreeNode): boolean => {
                         if (node.data?.referralCode === referralCode) {
                             // Add children to this node
@@ -164,12 +149,9 @@ const ReferralTree: React.FC = ({ }) => {
 
 
                 toast.dismiss(toastID)
-            } else {
-                toast.error('Failed to load referrals');
             }
         } catch (error) {
-            console.error('Error fetching referrals:', error);
-            toast.error('Error loading referrals');
+            console.error('Error fetching referrals:');
         } finally {
             setLoading(false);
         }
@@ -227,7 +209,7 @@ const ReferralTree: React.FC = ({ }) => {
                     textAnchor="middle"
                     style={{ fill: '#1F2937', fontSize: '11px', cursor: "pointer", fontFamily: 'inter', letterSpacing: 1.2, textDecoration: 'none' }}
                 >
-                    
+
                     {node.name}
                 </text>
             </g>

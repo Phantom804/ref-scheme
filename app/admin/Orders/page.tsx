@@ -107,7 +107,7 @@ const Orders: React.FC = () => {
             setTotalOrders(data.totalOrders);
         } catch (error) {
             console.error('Error fetching orders:', error);
-            toast.error('Failed to load orders. Please try again.');
+            toast.error("Network or Server issue! please check you internet");
         } finally {
             setLoading(false);
         }

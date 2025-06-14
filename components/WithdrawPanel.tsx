@@ -5,6 +5,7 @@ import { DollarSign, XCircle, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/Pagination';
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WithdrawHistory {
   id: string;
@@ -30,6 +31,7 @@ interface WithdrawPanelProps {
 
 const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { appSettings, isLoading: settingsLoading } = useAuth();
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [withdrawalHistory, setWithdrawalHistory] = useState<WithdrawHistory[]>([]);
@@ -40,6 +42,10 @@ const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
   const [accountTitle, setAccountTitle] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [bankName, setBankName] = useState('');
+  const [minimumAmount, setMinimumAmount] = useState(0);
+  const [minimumPercentage, setMinimumPercentage] = useState(0);
+
+
 
   const fetchWithdrawals = async (page = currentPage) => {
     setLoading(true);
@@ -69,6 +75,13 @@ const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
     fetchWithdrawals();
   }, []);
 
+  useEffect(() => {
+    if (!settingsLoading && appSettings) {
+      setMinimumAmount((appSettings as any)?.minWithdrawAmount || 0);
+      setMinimumPercentage((appSettings as any)?.minWithdrawPercent || 0);
+    }
+  }, [appSettings, settingsLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -81,7 +94,7 @@ const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
         setAccountNumber('');
         setBankName('');
         setIsDialogOpen(false);
-        fetchWithdrawals(1); // Refresh the first page after new withdrawal
+        fetchWithdrawals(1);
       }
     } catch (error) {
       console.error('Error submitting withdrawal:', error);
@@ -112,13 +125,18 @@ const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
               <XCircle className="w-6 h-6" />
             </button>
             <h2 className="text-xl font-semibold mb-4">Request Withdrawal</h2>
+            {!settingsLoading && (
+              <p className="text-sm text-slate-400 mb-4">
+                The withdrawal amount should be at least {minimumPercentage}% of your total earnings.
+              </p>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="amount" className="block text-sm font-medium text-slate-300 mb-2">
                   Amount to Withdraw
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 left-0 pl-2 text-gray-400 flex items-center pointer-events-none">
                     PKR
                   </div>
                   <input
@@ -126,6 +144,7 @@ const WithdrawPanel = ({ onWithdraw }: WithdrawPanelProps) => {
                     id="amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
+                    min={minimumAmount}
                     step="0.01"
                     required
                     className="block w-full pl-10 pr-3 py-2 border border-slate-600 rounded-lg bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
