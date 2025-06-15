@@ -152,7 +152,11 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                     <h3 className="font-bold text-base sm:text-lg mb-2">Buy Now</h3>
 
                     <div className="mb-4 sm:mb-6">
-                        <div className="text-gray-300 mb-2 font-medium text-sm sm:text-base">Choose Payment Method</div>
+ {paymentDetails.length > 0 && (
+    <div className="text-gray-300 mb-2 font-medium text-sm sm:text-base">
+        Choose Payment Method
+    </div>
+)}
                         <div className="flex gap-2 mb-4">
 
                             {Array.isArray(paymentDetails) && paymentDetails.map((detail, index) => (

@@ -1,16 +1,11 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProductsSection from '@/components/ProductsSection';
 import { Loader2 } from "lucide-react";
-import LineChart from "@/components/charts/LineChart";
 import ProductLockPanel from "@/components/ProductLockPanel";
 import PaymentCard from "@/components/PaymentCard";
-import { useParams } from "next/navigation";
-import { toast } from 'sonner'
 import { format } from "date-fns";
-
+import PriceGraphSection from "@/components/PriceGraphSection";
+import type { Metadata, ResolvingMetadata } from 'next';
 
 interface Product {
     id: string;
@@ -22,69 +17,107 @@ interface Product {
     imageUrl: string;
     category: string;
     createdAt: Date;
-
 }
 
-export default function ProductDetail() {
-
-    const { id } = useParams();
-
-    const PRODUCT_ID = id;
-
-
-    const [priceData, setPriceData] = useState([]);
-    const [product, setProduct] = useState<Product | null>(null);
-
-    const [loading, setLoading] = useState(false);
-    const [selectedRange, setSelectedRange] = useState<'yearly' | '6months' | 'monthly'>('monthly');
-
-    useEffect(() => {
-        const fetchProduct = async () => {
-            setLoading(true);
-            try {
-                const res = await fetch(`/api/products/detail?id=${PRODUCT_ID}`);
-                if (!res.ok) {
-                    throw new Error('Failed to fetch product');
-                }
-                if (res.status === 400) {
-                    toast.warning('Bad request. Use a valid product Link.');
-                }
-                const data = await res.json();
-
-                setProduct(data);
-            } catch (error) {
-                console.error('Network issue! please check you internet');
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (PRODUCT_ID) fetchProduct();
-    }, [PRODUCT_ID]);
-
-    const fetchPriceData = async (range: 'yearly' | '6months' | 'monthly') => {
-        const res = await fetch(`/api/price-history?productId=${PRODUCT_ID}&range=${range}`);
+async function getProduct(id: string) {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/products/detail?id=${id}`, {
+            cache: 'no-store'
+        });
         const data = await res.json();
+        if (!res.ok) return { error: data.error || 'Failed to fetch product' };
+        return data;
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        return { error: 'An unexpected error occurred' };
+    }
+}
 
-        setPriceData(data);
+async function getPriceHistory(id: string, range: 'yearly' | '6months' | 'monthly' = 'monthly') {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/price-history?productId=${id}&range=${range}`, {
+            cache: 'no-store'
+        });
+        if (!res.ok) throw new Error('Failed to fetch price history');
+        return await res.json();
+    } catch (error) {
+        console.error('Error fetching price history:', error);
+        return [];
+    }
+}
+
+type GenerateMetadataProps = {
+    params: Promise<{
+        id: string;
+    }>;
+};
+
+export async function generateMetadata(
+    { params }: GenerateMetadataProps,
+    parent: ResolvingMetadata
+): Promise<Metadata> {
+    // Await the params promise
+    const { id } = await params;
+    const product = await getProduct(id);
+
+    if (product?.error) {
+        return {
+            title: 'Product Error | Cash Vibe',
+            description: 'There was an error loading the product.',
+        };
+    }
+
+    return {
+        title: `${product.name}`,
+        description: product.description,
+        openGraph: {
+            title: `${product.name}`,
+            description: product.description,
+            images: [
+                {
+                    url: product.imageUrl,
+                    width: 800,
+                    height: 600,
+                },
+            ],
+        },
     };
+}
 
 
-    useEffect(() => {
-        fetchPriceData(selectedRange);
-    }, [selectedRange]);
+type PageProps = {
+    params: Promise<{
+        id: string;
+    }>;
+    searchParams?: Promise<{
+        [key: string]: string | string[] | undefined;
+    }>;
+};
 
+export default async function ProductDetail({ params }: PageProps) {
+
+    const { id } = await params;
+    const PRODUCT_ID = id;
+    const product = await getProduct(PRODUCT_ID);
+    const initialPriceData = product?.error ? [] : await getPriceHistory(PRODUCT_ID);
 
     return (
         <>
-
             <Navbar />
-            {loading ? (
+            {product?.error ? (
+                <div className="flex flex-col justify-center items-center py-16 sm:py-20 px-4 text-center">
+                    <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/30 mb-4">
+                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Error Loading Product</h2>
+                        <p className="text-sm sm:text-base text-gray-300">{product.error}</p>
+                    </div>
+                    <p className="text-gray-400 mt-4">This may happen if the product ID is invalid or the product has been removed.</p>
+                </div>
+            ) : !product ? (
                 <div className="flex justify-center items-center py-8 sm:py-10 px-4">
                     <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-purple-500" />
                     <span className="ml-2 text-sm sm:text-base text-gray-400">Loading...</span>
                 </div>
             ) : (
-
                 <div>
                     <div className="flex flex-col md:flex-row items-start gap-8 mt-6 pb-10 md:pb-20 px-4 sm:px-6">
                         <div className="flex-1 w-full">
@@ -111,58 +144,20 @@ export default function ProductDetail() {
                                 </p>
                             </div>
 
-                            {/* Price Ggraph */}
-                            <div className="bg-[#241e34] rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                                    <span className="text-white font-bold text-lg">Price Graph</span>
-                                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                                        {['monthly', '6months', 'yearly'].map((range) => (
-                                            <button
-                                                key={range}
-                                                onClick={() => setSelectedRange(range as any)}
-                                                className={`rounded-full px-2 sm:px-4 py-1 text-xs sm:text-sm ${selectedRange === range ? 'bg-blue-700/30 text-white border border-blue-600/80' : 'text-white/70'
-                                                    }`}
-                                            >
-                                                {range === '6months' ? '6 Months' : range.charAt(0).toUpperCase() + range.slice(1)}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="h-[250px] sm:h-[300px] w-full">
-                                    <LineChart
-                                        data={priceData}
-                                        datasets={[
-                                            {
-                                                key: "price",
-                                                color: "#a58ae7",
-                                                label: "Price"
-                                            }
-                                        ]}
-                                    />
-                                </div>
-                            </div>
+                            {/* Price Graph - Using client component */}
+                            <PriceGraphSection productId={PRODUCT_ID} initialData={initialPriceData} />
                         </div>
                         {product?.isLocked ? (
                             <ProductLockPanel />
                         ) : (
-
                             <PaymentCard id={product?.id} productName={product?.name} price={product?.price} productCode={product?.productCode} />
-                        )
-                        }
-
-
-
+                        )}
                     </div>
                     <div className="px-4 sm:px-6">
                         <ProductsSection TopHeading="Suggested Products" viewAll={false} />
                     </div>
                 </div>
-
             )}
-
-
-
         </>
-
     );
 }

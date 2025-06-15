@@ -15,7 +15,7 @@ const Hero: React.FC = () => {
                 <div className="relative z-10 flex flex-col sm:flex-row items-center sm:justify-between gap-8 sm:gap-0">
                     <div className="max-w-full sm:max-w-2xl text-center sm:text-left">
                         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white lg:text-6xl">
-                            Refer your friend and get 10% bonus on your first sale.
+                            Welcome to cash vibe let's start your new business..
                         </h1>
                         <div className="mt-6 sm:mt-10">
                             <Link href={"/products"} >
