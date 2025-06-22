@@ -1,21 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongoose';
+import { NextRequest, NextResponse } from "next/server";
+import { generateToken } from '@/lib/auth/authHelper';
+import { verifyToken } from '@/lib/auth/authHelper';
 import { User } from '@/lib/models/User';
-import { AppSetting } from '@/lib/models/AppSetting';
-import { v2 as cloudinary } from 'cloudinary';
+import { connectToDatabase } from '@/lib/mongoose';
 import { rateLimiter } from '@/lib/rateLimiter';
 
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
     try {
-
-        const rateLimit = await rateLimiter(req, 'signup', { windowSec: 600, max: 4, });
+        const rateLimit = await rateLimiter(req, 'updateprofile', { windowSec: 600, max: 3, });
 
         if (!rateLimit.success) {
             const headers = new Headers({
@@ -25,159 +17,136 @@ export async function POST(req: NextRequest) {
             const retryAfterMin = Math.ceil(rateLimit.retryAfter / 60)
 
             return NextResponse.json(
-                { success: false, message: `Suspicious activity detected. Try again after ${retryAfterMin} min.` },
+                { success: false, message: `Too many profile update requests. Try again after ${retryAfterMin} minutes.` },
                 { status: 429, headers }
             );
         }
 
+        const body = await req.json();
+        const { id, name, email, phoneNumber, oldpin, newpin } = body;
+        if (!id) {
+            return NextResponse.json({ success: false, message: "User ID required." }, { status: 400 });
+        }
 
-        const formData = await req.formData();
-
-        const name = formData.get('name') as string;
-        const phoneNumber = formData.get('phoneNumber') as string;
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-        const country = formData.get('country') as string;
-        const idCardFront = formData.get('idCardFront') as File;
-        const idCardBack = formData.get('idCardBack') as File;
+        if (oldpin && newpin) {
+            if (oldpin === newpin) {
+                return NextResponse.json({ success: false, message: "New pin and old pin can't be same." }, { status: 400 });
+            }
+        }
 
 
-        if (!name || !phoneNumber || !password) {
+        const token = req.cookies.get('auth_token')?.value;
+
+        if (!token) {
             return NextResponse.json(
-                { success: false, message: 'Please fill All Required Fields' },
-                { status: 400 }
+                { success: false, message: 'Not authenticated' },
+                { status: 401 }
             );
         }
 
-
-        const appSettings = await AppSetting.findOne();
-        const requireIdCardUpload = appSettings?.requireIdCardUpload || false;
-
-        if (requireIdCardUpload && (!idCardFront || !idCardBack)) {
-            return NextResponse.json({ message: "ID card front and back images are required." }, { status: 400 });
-        }
-
-
-        let idCardFrontUrl = "";
-        let idCardBackUrl = "";
-
-
-        const frontFileType = idCardFront?.type;
-        const backFileType = idCardBack?.type;
-        if (requireIdCardUpload) {
-            // Validate ID card file types
-
-
-            if (!['image/jpeg', 'image/png', 'image/jpg'].includes(frontFileType) ||
-                !['image/jpeg', 'image/png', 'image/jpg'].includes(backFileType)) {
-                return NextResponse.json(
-                    { success: false, message: 'Only JPG and PNG formats are supported for ID cards' },
-                    { status: 400 }
-                );
-            }
-
-            // Validate file sizes (max 1MB each)
-            if (idCardFront.size > 1024 * 1024 || idCardBack.size > 1024 * 1024) {
-                return NextResponse.json(
-                    { success: false, message: 'ID card image size must be less than 1MB' },
-                    { status: 400 }
-                );
-            }
+        // Verify token
+        const decoded = verifyToken(token);
+        if (!decoded) {
+            return NextResponse.json(
+                { success: false, message: 'Invalid token' },
+                { status: 401 }
+            );
         }
 
         await connectToDatabase();
+        const user = await User.findById(decoded.id).exec();
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ phoneNumber }).exec();
-
-        if (existingUser) {
+        if (!user) {
             return NextResponse.json(
-                { success: false, message: 'User with this Number already exists' },
-                { status: 409 }
+                { success: false, message: 'User not found' },
+                { status: 404 }
             );
         }
 
-        // Only upload ID card images if required
-        if (requireIdCardUpload) {
-            // Upload ID card front image to Cloudinary
-            const frontArrayBuffer = await idCardFront.arrayBuffer();
-            const frontBuffer = Buffer.from(frontArrayBuffer);
-            const frontBase64String = frontBuffer.toString('base64');
-            const frontDataURI = `data:${frontFileType};base64,${frontBase64String}`;
+        if (user.isBlocked === true) {
+            const response = NextResponse.json(
+                { success: false, message: 'You have been block by admin' },
+                { status: 404 }
+            )
 
-            const frontUploadResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload(
-                    frontDataURI,
-                    {
-                        folder: 'digital-marketplace/id-cards',
-                        resource_type: 'image',
-                    },
-                    (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
-                    }
-                );
+            response.cookies.set({
+                name: 'auth_token',
+                value: '',
+                httpOnly: true,
+                expires: new Date(0),
+                path: '/'
             });
-
-            idCardFrontUrl = (frontUploadResult as any).secure_url;
-
-            // Upload ID card back image to Cloudinary
-            const backArrayBuffer = await idCardBack.arrayBuffer();
-            const backBuffer = Buffer.from(backArrayBuffer);
-            const backBase64String = backBuffer.toString('base64');
-            const backDataURI = `data:${backFileType};base64,${backBase64String}`;
-
-            const backUploadResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload(
-                    backDataURI,
-                    {
-                        folder: 'digital-marketplace/id-cards',
-                        resource_type: 'image',
-                    },
-                    (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
-                    }
-                );
-            });
-
-            idCardBackUrl = (backUploadResult as any).secure_url;
+            return response;
         }
 
-        // Create new user with ID card image URLs if available
-        const userData = {
-            name,
-            referralCode: phoneNumber,
-            phoneNumber,
-            ...(email && { email }),
-            password: password,
-            country: country,
-            isVerified: true
-        };
 
-        // Only add ID card URLs if they were uploaded
-        if (requireIdCardUpload) {
-            Object.assign(userData, {
-                idCardFrontUrl,
-                idCardBackUrl
-            });
+if (phoneNumber && phoneNumber !== user.phoneNumber) {
+    const existingUser = await User.findOne({ phoneNumber }).exec();
+    if (existingUser) {
+        return NextResponse.json({
+            success: false,
+            message: 'An account with this phone number already exists.'
+        }, { status: 400 });
+    }
+}
+
+
+        // Update info
+        if (name) user.name = name;
+        if (email) user.email = email;
+        if (phoneNumber) user.phoneNumber = phoneNumber;
+        if (phoneNumber) user.referralCode = phoneNumber;
+
+        if (oldpin && newpin) {
+            if (oldpin !== user.password) {
+                return NextResponse.json({ success: false, message: "Old pin is incorrect." }, { status: 400 });
+            }
+
+            user.password = newpin;
         }
 
-        const user = await User.create(userData);
 
-        return NextResponse.json(
-            {
-                success: true,
-                message: 'Account created successfully. Login Now',
-                userId: user._id
-            },
-            { status: 201 }
-        );
+        await user.save();
+
+
+        const jwtpayload = {
+            id: user._id,
+            name: user.name,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            referralCode: user.referralCode,
+            role: user.role
+        }
+
+
+        const jwtToken = generateToken(jwtpayload);
+
+
+
+        const response = NextResponse.json({
+            success: true, user: {
+                id: user._id,
+                name: user.name,
+                phoneNumber: user.phoneNumber,
+                referralCode: user.referralCode || user.phoneNumber,
+                email: user.email,
+                role: user.role
+            }
+        })
+
+
+        response.cookies.set({
+            name: 'auth_token',
+            value: jwtToken,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24 * 7,
+            path: '/'
+        });
+
+        return response
     } catch (error) {
-        console.error('Signup error:', error);
-        return NextResponse.json(
-            { success: false, message: 'Something went wrong' },
-            { status: 500 }
-        );
+        return NextResponse.json({ success: false, message: "Server error." }, { status: 500 });
     }
 }
