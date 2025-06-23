@@ -1,6 +1,6 @@
 "use client";
 
-import { Save, Image, X, LockIcon } from 'lucide-react';
+import { Save, Image, X, LockIcon, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useState, useRef, FormEvent, useEffect } from 'react';
@@ -395,7 +395,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                         onCheckedChange={handleDeliverableChange}
                                     />
                                     <label htmlFor="isDeliverable" className="text-sm font-medium text-gray-300 flex items-center">
-                                        <LockIcon size={16} className="mr-2" />
+                                        <Truck size={16} className="mr-2" />
                                         isDeliverable
                                     </label>
                                 </div>
