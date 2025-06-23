@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
         let orderQuery = Order.find(searchQuery)
             .sort({ createdAt: -1 })
-            .populate({ path: 'productId', select: 'referralLimt price', strictPopulate: false });
+            .populate({ path: 'productId', select: 'referralLimt price isDeliverable', strictPopulate: false });
 
 
         const totalOrders = await Order.countDocuments(searchQuery);
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
                 transactionId: order.transactionId,
                 quantity: order.quantity,
                 price: `PKR ${order.productId?.price}`,
+                isDeliverable: order.productId?.isDeliverable,
                 boughtOn: order.createdAt.toLocaleDateString(),
                 status: order.status,
                 deliveryRequested: order.deliveryRequested || false,

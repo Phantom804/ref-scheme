@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
         const description = formData.get('description') as string;
         const imageFile = formData.get('image') as File;
         const isLocked = formData.get('isLocked') === 'true';
+        const isDeliverable = formData.get('isDeliverable') === 'true';
 
         // Validate required fields
         if (!name || !price || !category || !description || !imageFile) {
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
             imageUrl,
             productCode,
             isLocked,
+            isDeliverable,
         });
 
         // Add price history
@@ -186,6 +188,7 @@ export async function PATCH(request: NextRequest) {
         const imageFile = formData.get('image') as File;
         const existingImageUrl = formData.get('imageUrl') as string;
         const isLocked = formData.get('isLocked') === 'true';
+        const isDeliverable = formData.get('isDeliverable') === 'true';
 
         // Validate required fields
         if (!id || !name || !price || !category || !description) {
@@ -223,6 +226,7 @@ export async function PATCH(request: NextRequest) {
             description,
             imageUrl,
             isLocked,
+            isDeliverable,
         };
 
         const updatedProduct = await Product.findByIdAndUpdate(

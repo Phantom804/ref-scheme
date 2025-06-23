@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
 
 
-        if (!password === user.password) {
+        if (password !== user.password) {
             return NextResponse.json(
                 { success: false, message: 'Invalid credentials' },
                 { status: 401 }

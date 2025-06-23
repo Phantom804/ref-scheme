@@ -80,13 +80,22 @@ export async function PATCH(req: NextRequest) {
         }
 
 
-
+        if (phoneNumber && phoneNumber !== user.phoneNumber) {
+            const existingUser = await User.findOne({ phoneNumber }).exec();
+            if (existingUser) {
+                return NextResponse.json({
+                    success: false,
+                    message: 'An account with this phone number already exists.'
+                }, { status: 400 });
+            }
+        }
 
 
         // Update info
         if (name) user.name = name;
         if (email) user.email = email;
         if (phoneNumber) user.phoneNumber = phoneNumber;
+        if (phoneNumber) user.referralCode = phoneNumber;
 
         if (oldpin && newpin) {
             if (oldpin !== user.password) {

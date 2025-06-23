@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { Order } from '@/lib/models/Order';
 import { User } from '@/lib/models/User';
-import { Product } from '@/lib/models/Product';
 
 export async function GET(request: NextRequest) {
     try {
@@ -150,6 +149,13 @@ export async function PATCH(request: NextRequest) {
         const order = await Order.findById(orderId);
 
         if (order?.status !== 'Pending') {
+            return NextResponse.json(
+                { error: 'You can not change Status Again' },
+                { status: 400 }
+            );
+        }
+
+        if (order?.deliveryStatus !== 'Pending') {
             return NextResponse.json(
                 { error: 'You can not change Status Again' },
                 { status: 400 }

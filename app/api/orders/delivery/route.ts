@@ -39,8 +39,11 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        // Find the order and verify ownership
-        const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId).populate({
+            path: 'productId',
+            select: 'isDeliverable',
+        });
+
 
         if (!order) {
             return NextResponse.json(
@@ -57,7 +60,19 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
+        if (order.deliveryRequested === true) {
+            return NextResponse.json(
+                { success: false, message: 'Delivery request already submitted' },
+                { status: 400 }
+            );
+        }
 
+        if (order.productId.isDeliverable === false) {
+            return NextResponse.json(
+                { success: false, message: 'Delivery not available for this product' },
+                { status: 400 }
+            );
+        }
 
         // Update the order with delivery information
         order.deliveryRequested = true;

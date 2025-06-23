@@ -24,7 +24,8 @@ const UserSchema = new Schema<IUser>(
     {
         name: { type: String },
         email: { type: String, index: true },
-        phoneNumber: { type: String, required: true, index: true },
+        // set unique true for phone
+        phoneNumber: { type: String, required: true, index: true, unique: true },
         password: { type: String, required: true },
         referralCode: { type: String, index: true },
         country: { type: String },

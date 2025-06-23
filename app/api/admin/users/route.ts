@@ -119,12 +119,24 @@ export async function PUT(request: NextRequest) {
         // If role is being changed, only superAdmin can do it
 
         const _id = id;
+        const phoneNumber = updateData.phoneNumber;
+
+
         if (role !== undefined) {
             if (requestingUser.role !== 'superAdmin') {
                 return NextResponse.json(
                     { success: false, message: 'Only superAdmin can change user roles' },
                     { status: 403 }
                 );
+            }
+
+            const existingUser = await User.findOne({ phoneNumber, _id: { $ne: _id } });
+
+            if (existingUser) {
+                return NextResponse.json({
+                    success: false,
+                    message: 'Phone number already in use by another user',
+                }, { status: 400 });
             }
 
             if (role === 'superAdmin') {
@@ -134,6 +146,8 @@ export async function PUT(request: NextRequest) {
                 );
             }
         }
+
+
         const user = await User.findByIdAndUpdate(
             _id,
             {

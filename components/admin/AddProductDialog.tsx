@@ -34,7 +34,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         description: '',
         referralLimt: 0,
         referralCommission: 0,
-        isLocked: false
+        isLocked: false,
+        isDeliverable: false
     });
     const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
 
@@ -109,6 +110,13 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         setFormData(prev => ({
             ...prev,
             isLocked: checked
+        }));
+    };
+
+    const handleDeliverableChange = (checked: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            isDeliverable: checked
         }));
     };
 
@@ -374,6 +382,18 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                     <label htmlFor="isLocked" className="text-sm font-medium text-gray-300 flex items-center">
                                         <LockIcon size={16} className="mr-2" />
                                         Lock Product (Prevents purchase)
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="isDeliverable"
+                                        checked={formData.isDeliverable}
+                                        onCheckedChange={handleDeliverableChange}
+                                    />
+                                    <label htmlFor="isDeliverable" className="text-sm font-medium text-gray-300 flex items-center">
+                                        <LockIcon size={16} className="mr-2" />
+                                        isDeliverable
                                     </label>
                                 </div>
                             </div>

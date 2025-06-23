@@ -20,6 +20,7 @@ interface Product {
     productReferralLimit: number,
     referralUsageCount: number;
     referralCode: string;
+    isDeliverable: boolean;
     price: string;
     boughtOn: string;
     status: "Pending" | "Completed" | "Cancelled";
@@ -195,17 +196,18 @@ function BoughtProducts() {
                                     <TableCell>
                                         {product.status === "Completed" ? (
                                             product.deliveryRequested ? (
-                                                <Badge variant={
-                                                    product.deliveryStatus === "Delivered"
-                                                        ? "secondary"
-                                                        : product.deliveryStatus === "In Transit"
-                                                            ? "default"
+                                                <Badge
+                                                    variant={
+                                                        product.deliveryStatus === "Delivered"
+                                                            ? "secondary"
                                                             : "default"
-                                                } className="flex items-center gap-1">
+                                                    }
+                                                    className="flex items-center gap-1"
+                                                >
                                                     <Truck className="h-3 w-3" />
                                                     {product.deliveryStatus}
                                                 </Badge>
-                                            ) : (
+                                            ) : product.isDeliverable ? (
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -215,11 +217,18 @@ function BoughtProducts() {
                                                     <Truck className="h-3 w-3" />
                                                     Request Delivery
                                                 </Button>
+                                            ) : (
+                                                <span className="text-gray-500 text-xs">
+                                                    Delivery not available for this product
+                                                </span>
                                             )
                                         ) : (
-                                            <span className="text-gray-500 text-xs">Not available until order is completed</span>
+                                            <span className="text-gray-500 text-xs">
+                                                Not available until order is completed
+                                            </span>
                                         )}
                                     </TableCell>
+
                                 </TableRow>
                             ))}
                         </TableBody>
