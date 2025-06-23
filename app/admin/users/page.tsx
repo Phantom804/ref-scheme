@@ -122,7 +122,7 @@ const Users: React.FC = () => {
                 toast.success("User updated successfully");
                 fetchUsers();
             } else {
-                throw new Error(data.error);
+                toast.error(data.message);
             }
         } catch (error) {
             toast.error("Failed to update user");
