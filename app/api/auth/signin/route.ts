@@ -54,17 +54,10 @@ export async function POST(req: NextRequest) {
 
 
         if (password !== user.password) {
-<<<<<<< HEAD
             return NextResponse.json(
                 { success: false, message: 'Invalid credentials' },
                 { status: 401 }
             );
-=======
-    return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
-        { status: 401 }
-    );
->>>>>>> 5ca7aef1feeabfe8364c51d1711ba756b0ee32cc
         }
 
         const jwtpayload = {

@@ -80,7 +80,6 @@ export async function PATCH(req: NextRequest) {
         }
 
 
-<<<<<<< HEAD
         if (phoneNumber && phoneNumber !== user.phoneNumber) {
             const existingUser = await User.findOne({ phoneNumber }).exec();
             if (existingUser) {
@@ -90,17 +89,6 @@ export async function PATCH(req: NextRequest) {
                 }, { status: 400 });
             }
         }
-=======
-if (phoneNumber && phoneNumber !== user.phoneNumber) {
-    const existingUser = await User.findOne({ phoneNumber }).exec();
-    if (existingUser) {
-        return NextResponse.json({
-            success: false,
-            message: 'An account with this phone number already exists.'
-        }, { status: 400 });
-    }
-}
->>>>>>> 5ca7aef1feeabfe8364c51d1711ba756b0ee32cc
 
 
         // Update info
