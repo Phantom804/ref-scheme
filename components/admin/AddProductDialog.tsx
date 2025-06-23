@@ -59,7 +59,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                         description: product.description || '',
                         referralLimt: product.referralLimt || 0,
                         referralCommission: product.referralCommission || 0,
-                        isLocked: product.isLocked || false
+                        isLocked: product.isLocked || false,
+                        isDeliverable: product.isDeliverable || false
                     });
 
                     if (product.imageUrl) {
@@ -177,7 +178,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             referralLimt: 0,
             referralCommission: 0,
             description: '',
-            isLocked: false
+            isLocked: false,
+            isDeliverable: false
         });
         setFile(null);
         setExistingImageUrl(null);
