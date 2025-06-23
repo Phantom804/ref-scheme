@@ -214,6 +214,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             productFormData.append('category', formData.category);
             productFormData.append('description', formData.description);
             productFormData.append('isLocked', formData.isLocked.toString());
+               productFormData.append('isDeliverable', formData.isDeliverable.toString());
 
             if (isEditMode && productId) {
                 productFormData.append('id', productId);
