@@ -142,10 +142,12 @@ export async function PATCH(request: NextRequest) {
         const order = await Order.findById(orderId);
 
         if (order?.status !== 'Pending') {
+            if(status !== order?.status){
             return NextResponse.json(
                 { error: 'You can not change Status Again' },
                 { status: 400 }
             );
+            }
         }
 
         if (order?.deliveryStatus !== 'Pending') {
