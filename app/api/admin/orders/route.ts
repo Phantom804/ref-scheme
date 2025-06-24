@@ -23,10 +23,12 @@ export async function GET(request: NextRequest) {
         const searchQuery: any = {};
 
         // Default to showing only Pending orders unless specific filters are applied
-        if (!showCancelledOrders && !showCompletedOrders) {
-            searchQuery.status = 'Pending';
-
-            searchQuery.deliveryStatus = { $ne: 'Delivered' };
+        
+            if (!showCancelledOrders && !showCompletedOrders) {
+  searchQuery.$or = [
+    { status: 'Pending' },
+    { deliveryStatus: { $in: ['Pending', 'In Transition'] } }
+  ];
         } else {
 
             const statusesToInclude = [];
