@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
             if (!showCancelledOrders && !showCompletedOrders) {
   searchQuery.$or = [
     { status: 'Pending' },
-    { deliveryStatus: { $in: ['Pending', 'In Transition'] } }
+    { deliveryStatus: { $in: ['Pending', 'In Transit'] } }
   ];
         } else {
 
