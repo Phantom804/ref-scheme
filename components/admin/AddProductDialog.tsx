@@ -60,7 +60,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                         referralLimt: product.referralLimt || 0,
                         referralCommission: product.referralCommission || 0,
                         isLocked: product.isLocked || false,
-                        isDeliverable: product.isDeliverable || true
+                        isDeliverable: product.isDeliverable ?? true
                         
                     });
 
