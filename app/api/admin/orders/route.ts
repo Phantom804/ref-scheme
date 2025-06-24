@@ -22,31 +22,28 @@ export async function GET(request: NextRequest) {
         // Build search query
         const searchQuery: any = {};
 
-        // Default to showing only Pending orders unless specific filters are applied
-        
-            if (!showCancelledOrders && !showCompletedOrders) {
+// Default to showing only Pending orders or those with deliveryStatus 'Pending' or 'In Transition'
+if (!showCancelledOrders && !showCompletedOrders) {
   searchQuery.$or = [
     { status: 'Pending' },
-    { deliveryStatus: { $in: ['Pending', 'In Transit'] } }
+    { deliveryStatus: { $in: ['Pending', 'In Transition'] } }
   ];
-        } else {
+} else {
+  const statusesToInclude: string[] = [];
 
-            const statusesToInclude = [];
-            if (showCancelledOrders) {
-                statusesToInclude.push('Cancelled');
-            }
-            if (showCompletedOrders) {
-                statusesToInclude.push('Completed');
-            }
-            // Only include statuses that are explicitly requested
-            if (statusesToInclude.length > 0) {
-                searchQuery.status = { $in: statusesToInclude };
-            } else {
+  if (showCancelledOrders) {
+    statusesToInclude.push('Cancelled');
+  }
 
-                searchQuery.status = 'Pending';
-            }
-        }
+  if (showCompletedOrders) {
+    statusesToInclude.push('Completed');
+  }
 
+  // Only include statuses that are explicitly requested
+  if (statusesToInclude.length > 0) {
+    searchQuery.status = { $in: statusesToInclude };
+  }
+}
         // General search
         if (search) {
             searchQuery.$or = [
