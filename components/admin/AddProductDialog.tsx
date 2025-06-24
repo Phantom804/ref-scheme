@@ -35,7 +35,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         referralLimt: 0,
         referralCommission: 0,
         isLocked: false,
-        isDeliverable: false
+        isDeliverable: true
     });
     const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
 
@@ -60,7 +60,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                         referralLimt: product.referralLimt || 0,
                         referralCommission: product.referralCommission || 0,
                         isLocked: product.isLocked || false,
-                        isDeliverable: product.isDeliverable || false
+                        isDeliverable: product.isDeliverable || true
+                        
                     });
 
                     if (product.imageUrl) {
@@ -179,7 +180,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             referralCommission: 0,
             description: '',
             isLocked: false,
-            isDeliverable: false
+            isDeliverable: true
         });
         setFile(null);
         setExistingImageUrl(null);
