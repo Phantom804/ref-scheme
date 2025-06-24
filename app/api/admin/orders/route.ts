@@ -19,57 +19,51 @@ export async function GET(request: NextRequest) {
 
         await connectToDatabase();
 
-        // Build search query
-        const searchQuery: any = {};
+const searchQuery: any = {};
 
-// Default to showing only Pending orders or those with deliveryStatus 'Pending' or 'In Transition'
-if (!showCancelledOrders && !showCompletedOrders) {
-  searchQuery.$or = [
-    { status: 'Pending' },
-    { deliveryStatus: { $in: ['Pending', 'In Transition'] } }
-  ];
-} else {
-  const statusesToInclude: string[] = [];
+const statusFilter =
+  !showCancelledOrders && !showCompletedOrders
+    ? [
+        { status: 'Pending' },
+        { deliveryStatus: { $in: ['Pending', 'In Transit'] } }
+      ]
+    : [];
 
-  if (showCancelledOrders) {
-    statusesToInclude.push('Cancelled');
-  }
+const andConditions = [];
 
-  if (showCompletedOrders) {
-    statusesToInclude.push('Completed');
-  }
-
-  // Only include statuses that are explicitly requested
-  if (statusesToInclude.length > 0) {
-    searchQuery.status = { $in: statusesToInclude };
-  }
+if (statusFilter.length > 0) {
+  andConditions.push({ $or: statusFilter });
 }
-        // General search
-        if (search) {
-            searchQuery.$or = [
-                { transactionId: { $regex: search, $options: 'i' } },
-                { referralCode: { $regex: search, $options: 'i' } },
-                { buyer: { $regex: search, $options: 'i' } },
-            ];
-        }
 
+// General search
+if (search) {
+  andConditions.push({
+    $or: [
+      { transactionId: { $regex: search, $options: 'i' } },
+      { referralCode: { $regex: search, $options: 'i' } },
+      { buyer: { $regex: search, $options: 'i' } }
+    ]
+  });
+}
 
-        if (referralCode) {
-            searchQuery.referralCode = { $regex: referralCode, $options: 'i' };
-        }
+if (referralCode) {
+  andConditions.push({
+    referralCode: { $regex: referralCode, $options: 'i' }
+  });
+}
 
+if (minPrice !== undefined || maxPrice !== undefined) {
+  const priceFilter: any = {};
+  if (minPrice !== undefined) priceFilter.$gte = minPrice;
+  if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
 
+  andConditions.push({ price: priceFilter });
+}
 
-        // Price range filter
-        if (minPrice !== undefined || maxPrice !== undefined) {
-            searchQuery.price = {};
-            if (minPrice !== undefined) {
-                searchQuery.price.$gte = minPrice;
-            }
-            if (maxPrice !== undefined) {
-                searchQuery.price.$lte = maxPrice;
-            }
-        }
+// Finally, apply to searchQuery
+if (andConditions.length > 0) {
+  searchQuery.$and = andConditions;
+}
 
         // Prepare the query pipeline
         let orderQuery = Order.find(searchQuery).sort({ createdAt: -1 });
