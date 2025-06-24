@@ -149,13 +149,6 @@ if (status && order.status !== 'Pending' && status !== order.status) {
     );
 }
 
-// Restrict changing `deliveryStatus` if it's not Pending
-if (deliveryStatus && order.deliveryStatus !== 'Pending' && deliveryStatus !== order.deliveryStatus) {
-    return NextResponse.json(
-        { error: 'You can not change Delivery Status Again' },
-        { status: 400 }
-    );
-}
 
         if (!order) {
             return NextResponse.json(
