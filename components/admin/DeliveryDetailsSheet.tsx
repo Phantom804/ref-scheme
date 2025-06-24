@@ -32,7 +32,7 @@ export function DeliveryDetailsSheet({
             const data = await response.json();
 
             if (!response.ok) {
-                toast.error(data.message)
+                toast.error(data.error)
             }else{
                 toast.success('Delivery status updated successfully');
             onStatusUpdate();
