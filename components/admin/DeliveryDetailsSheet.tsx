@@ -33,10 +33,13 @@ export function DeliveryDetailsSheet({
 
             if (!response.ok) {
                 toast.error(data.message)
+            }else{
+                toast.success('Delivery status updated successfully');
+            onStatusUpdate();
+
             }
 
-            toast.success('Delivery status updated successfully');
-            onStatusUpdate();
+            
         } catch (error) {
             console.error('Error updating delivery status:', error);
             toast.error('Failed to update delivery status. Please try again.');
