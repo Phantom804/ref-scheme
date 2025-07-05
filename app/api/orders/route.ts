@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
                 productName: order.productName,
                 transactionId: order.transactionId,
                 quantity: order.quantity,
-                price: `PKR ${order.productId?.price}`,
+                price: `PKR ${order.quantity * order.productId?.price}`,
                 isDeliverable: order.productId?.isDeliverable,
                 boughtOn: order.createdAt.toLocaleDateString(),
                 status: order.status,

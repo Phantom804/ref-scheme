@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from 'sonner';
 import ChatButton from "@/components/ChatButton";
+import Footer from '@/components/Footer';
 
 
 
@@ -41,6 +42,7 @@ export default function RootLayout({
               <Toaster position="top-right" richColors />
               {children}
               <ChatButton />
+              <Footer />
             </AuthProvider>
           </div>
         </div>

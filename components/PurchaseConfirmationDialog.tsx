@@ -10,13 +10,14 @@ import { toast } from "sonner";
 interface PurchaseConfirmationDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (receiptFile?: File) => void;
+    onConfirm: (receiptFile: File | undefined, paymentType: 'regular' | 'earnings') => void;
     productId: string | undefined;
     productName: string | undefined;
     referralCode: string | undefined;
     productCode: string | undefined;
     quantity: number | undefined;
     price: number | undefined;
+    paymentType: 'regular' | 'earnings';
 }
 
 const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
@@ -29,6 +30,7 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
     productCode,
     quantity,
     price,
+    paymentType,
 }) => {
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -95,11 +97,11 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
     };
 
     const handleConfirm = () => {
-        if (!receiptFile) {
+        if (paymentType === 'regular' && !receiptFile) {
             toast.error("Please upload a receipt image");
             return;
         }
-        onConfirm(receiptFile);
+        onConfirm(receiptFile || undefined, paymentType);
     };
 
     return (
@@ -133,7 +135,9 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                         <span className="text-right text-xs sm:text-sm md:text-base">PKR {totalPrice}</span>
                     </div>
 
-                    <input
+                    {paymentType === 'regular' && (
+                        <>
+                            <input
                         type="file"
                         hidden
                         accept="image/png, image/jpeg, image/jpg"
@@ -175,11 +179,14 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                         )}
                     </div>
 
+                        </>
+                    )}
+
                     <div className="flex gap-3 mt-6">
                         <Button
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                             onClick={handleConfirm}
-                            disabled={!receiptFile}
+                            disabled={paymentType === 'regular' && !receiptFile}
                         >
                             Confirm
                         </Button>

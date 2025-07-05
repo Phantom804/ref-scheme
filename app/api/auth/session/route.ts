@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth/authHelper';
+import { User } from '@/lib/models/User';
 
 export async function GET(req: NextRequest) {
     try {
@@ -29,15 +30,23 @@ export async function GET(req: NextRequest) {
             );
         }
 
+        const user = await User.findById(decoded.id);
+        if (!user) {
+            return NextResponse.json(
+                { success: false, message: 'User not found' },
+                { status: 404 }
+            );
+        }
         return NextResponse.json({
             success: true,
             user: {
-                id: decoded.id,
-                name: decoded.name,
-                phoneNumber: decoded.phoneNumber,
-                referralCode: decoded.referralCode || decoded.phoneNumber,
-                email: decoded.email,
-                role: decoded.role
+                id: user._id,
+                name: user.name,
+                phoneNumber: user.phoneNumber,
+                referralCode: user.referralCode || user.phoneNumber,
+                email: user.email || null,
+                role: user.role,
+                totalEarning: user.totalEarning
             }
         });
     } catch (error) {

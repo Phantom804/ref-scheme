@@ -7,6 +7,7 @@ type User = {
     name: string;
     phoneNumber: string;
     referralCode: string;
+    totalEarning?: Number;
     email?: string;
     role?: string;
 }
@@ -31,6 +32,7 @@ type AuthContextType = {
     signUp: (formData: FormData) => Promise<{ success: boolean, message?: string }>;
     signOut: () => Promise<void>;
     updateUserInfo: (data: { id: string, name?: string, email?: string, phoneNumber?: string, oldpin?: string, newpin?: string }) => Promise<{ success: boolean, message?: string, user?: User }>;
+    refetchUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -175,7 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             signIn,
             signUp,
             signOut,
-            updateUserInfo
+            updateUserInfo,
+            refetchUser: fetchUserSession
         }}>
             {children}
         </AuthContext.Provider>

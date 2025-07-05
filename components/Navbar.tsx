@@ -105,6 +105,7 @@ const Navbar = () => {
                         Help
                     </Button>
                 </div>
+               
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -304,8 +305,15 @@ const Navbar = () => {
                                         </SheetClose>
                                     </div>
                                 )}
+
                             </div>
                         </div>
+ <div className="flex items-center justify-center mt-10 space-x-2">
+                    <p className="text-xs text-white">Developed by imCodeZero</p>
+                    <a href="https://imcodezero.com" target="_blank" rel="noopener noreferrer">
+                        <Image src="/main-logo.png" alt="imCodeZero Logo" width={18} height={18} className="rounded-full" />
+                    </a>
+                </div>
                     </SheetContent>
                 </Sheet>
             </div>
