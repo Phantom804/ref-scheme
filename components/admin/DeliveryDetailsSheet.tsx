@@ -29,13 +29,17 @@ export function DeliveryDetailsSheet({
                 },
                 body: JSON.stringify({ orderId, deliveryStatus: value }),
             });
+            const data = await response.json();
 
             if (!response.ok) {
-                throw new Error('Failed to update delivery status');
+                toast.error(data.error)
+            }else{
+                toast.success('Delivery status updated successfully');
+            onStatusUpdate();
+
             }
 
-            toast.success('Delivery status updated successfully');
-            onStatusUpdate();
+            
         } catch (error) {
             console.error('Error updating delivery status:', error);
             toast.error('Failed to update delivery status. Please try again.');

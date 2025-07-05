@@ -1,6 +1,6 @@
 "use client";
 
-import { Save, Image, X, LockIcon } from 'lucide-react';
+import { Save, Image, X, LockIcon, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useState, useRef, FormEvent, useEffect } from 'react';
@@ -35,7 +35,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
         referralLimt: 0,
         referralCommission: 0,
         isLocked: false,
-        isDeliverable: false
+        isDeliverable: true
     });
     const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
 
@@ -60,7 +60,8 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                         referralLimt: product.referralLimt || 0,
                         referralCommission: product.referralCommission || 0,
                         isLocked: product.isLocked || false,
-                        isDeliverable: product.isDeliverable || false
+                        isDeliverable: product.isDeliverable ?? true
+                        
                     });
 
                     if (product.imageUrl) {
@@ -179,7 +180,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             referralCommission: 0,
             description: '',
             isLocked: false,
-            isDeliverable: false
+            isDeliverable: true
         });
         setFile(null);
         setExistingImageUrl(null);
@@ -214,6 +215,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
             productFormData.append('category', formData.category);
             productFormData.append('description', formData.description);
             productFormData.append('isLocked', formData.isLocked.toString());
+               productFormData.append('isDeliverable', formData.isDeliverable.toString());
 
             if (isEditMode && productId) {
                 productFormData.append('id', productId);
@@ -394,7 +396,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({ isOpen, onClose, on
                                         onCheckedChange={handleDeliverableChange}
                                     />
                                     <label htmlFor="isDeliverable" className="text-sm font-medium text-gray-300 flex items-center">
-                                        <LockIcon size={16} className="mr-2" />
+                                        <Truck size={16} className="mr-2" />
                                         isDeliverable
                                     </label>
                                 </div>
