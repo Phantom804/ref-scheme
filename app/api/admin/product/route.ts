@@ -60,16 +60,7 @@ export async function POST(request: NextRequest) {
             imageUrl = await uploadImageToCloudinary(imageFile);
         }
 
-        // Generate a unique 5-digit product code
-        async function generateUniqueProductCode() {
-            while (true) {
-                const code = Math.floor(10000 + Math.random() * 90000).toString();
-                const existingProduct = await Product.findOne({ productCode: code });
-                if (!existingProduct) return code;
-            }
-        }
 
-        const productCode = await generateUniqueProductCode();
 
         // Create product in database
         const product = await Product.create({
@@ -80,7 +71,6 @@ export async function POST(request: NextRequest) {
             referralCommission,
             description,
             imageUrl,
-            productCode,
             isLocked,
             isDeliverable,
         });

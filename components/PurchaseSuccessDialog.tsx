@@ -13,7 +13,7 @@ interface PurchaseSuccessDialogProps {
     productName?: string;
     referralCode?: string;
     quantity?: number;
-    ToalPrice?: number;
+    TotalPrice?: number;
     transactionId?: string;
     paymentType: 'regular' | 'earnings';
 }
@@ -26,7 +26,7 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
     productName,
     referralCode,
     quantity,
-    ToalPrice,
+    TotalPrice,
     transactionId = "",
     paymentType,
 }) => {
@@ -124,7 +124,7 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
             }
             drawRow("Quantity", quantity?.toString() || "", startY + lineHeight * 5);
             drawRow("Bought On", currentDate, startY + lineHeight * 6);
-            drawRow("Total Price", `PKR ${(ToalPrice ?? 0)}`, startY + lineHeight * 7);
+            drawRow("Total Price", `PKR ${(TotalPrice ?? 0)}`, startY + lineHeight * 7);
 
             // Convert canvas to image and download
             const dataUrl = canvas.toDataURL('image/png');
@@ -207,7 +207,7 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
                                 We've received your request. We will confirm your details in 24 hrs.
                             </h2>
                         )}
-                     
+
 
                         <div className="space-y-4 mt-6">
                             <div className="flex justify-between items-center gap-4">
@@ -242,7 +242,7 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
                             </div>
                             <div className="flex justify-between items-center gap-4">
                                 <span className="text-sm sm:text-base font-medium">Total Price</span>
-                                <span className="text-xs sm:text-sm md:text-base">PKR {ToalPrice || 0}</span>
+                                <span className="text-xs sm:text-sm md:text-base">PKR {TotalPrice || 0}</span>
                             </div>
                         </div>
 

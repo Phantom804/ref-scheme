@@ -23,7 +23,6 @@ interface Order {
     productId: string;
     transactionId: string;
     quantity: number;
-    productCode?: string;
     referralCode?: string;
     commission?: string;
     buyer: string,

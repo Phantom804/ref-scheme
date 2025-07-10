@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
                 { status: 404 }
             );
         }
+
         return NextResponse.json({
             success: true,
             user: {
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
                 referralCode: user.referralCode || user.phoneNumber,
                 email: user.email || null,
                 role: user.role,
-                totalEarning: user.totalEarning.toFixed(2)
+                totalEarning: user.totalEarning
             }
         });
     } catch (error) {

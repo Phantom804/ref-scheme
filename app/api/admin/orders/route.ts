@@ -19,51 +19,51 @@ export async function GET(request: NextRequest) {
 
         await connectToDatabase();
 
-const searchQuery: any = {};
+        const searchQuery: any = {};
 
-const statusFilter =
-  !showCancelledOrders && !showCompletedOrders
-    ? [
-        { status: 'Pending' },
-        { deliveryStatus: { $in: ['Pending', 'In Transit'] } }
-      ]
-    : [];
+        const statusFilter =
+            !showCancelledOrders && !showCompletedOrders
+                ? [
+                    { status: 'Pending' },
+                    { deliveryStatus: { $in: ['Pending', 'In Transit'] } }
+                ]
+                : [];
 
-const andConditions = [];
+        const andConditions = [];
 
-if (statusFilter.length > 0) {
-  andConditions.push({ $or: statusFilter });
-}
+        if (statusFilter.length > 0) {
+            andConditions.push({ $or: statusFilter });
+        }
 
-// General search
-if (search) {
-  andConditions.push({
-    $or: [
-      { transactionId: { $regex: search, $options: 'i' } },
-      { referralCode: { $regex: search, $options: 'i' } },
-      { buyer: { $regex: search, $options: 'i' } }
-    ]
-  });
-}
+        // General search
+        if (search) {
+            andConditions.push({
+                $or: [
+                    { transactionId: { $regex: search, $options: 'i' } },
+                    { referralCode: { $regex: search, $options: 'i' } },
+                    { buyer: { $regex: search, $options: 'i' } }
+                ]
+            });
+        }
 
-if (referralCode) {
-  andConditions.push({
-    referralCode: { $regex: referralCode, $options: 'i' }
-  });
-}
+        if (referralCode) {
+            andConditions.push({
+                referralCode: { $regex: referralCode, $options: 'i' }
+            });
+        }
 
-if (minPrice !== undefined || maxPrice !== undefined) {
-  const priceFilter: any = {};
-  if (minPrice !== undefined) priceFilter.$gte = minPrice;
-  if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            const priceFilter: any = {};
+            if (minPrice !== undefined) priceFilter.$gte = minPrice;
+            if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
 
-  andConditions.push({ price: priceFilter });
-}
+            andConditions.push({ price: priceFilter });
+        }
 
-// Finally, apply to searchQuery
-if (andConditions.length > 0) {
-  searchQuery.$and = andConditions;
-}
+        // Finally, apply to searchQuery
+        if (andConditions.length > 0) {
+            searchQuery.$and = andConditions;
+        }
 
         // Prepare the query pipeline
         let orderQuery = Order.find(searchQuery).sort({ createdAt: -1 });
@@ -82,7 +82,7 @@ if (andConditions.length > 0) {
         const orders = await orderQuery
             .skip(skip)
             .limit(limit)
-            .populate('_id', 'name productCode')
+            .populate('_id', 'name')
             .exec();
 
         // Format the response
@@ -142,12 +142,12 @@ export async function PATCH(request: NextRequest) {
         const order = await Order.findById(orderId);
 
         // Restrict changing `status` if it's not Pending
-if (status && order.status !== 'Pending' && status !== order.status) {
-    return NextResponse.json(
-        { error: 'You can not change Status Again' },
-        { status: 400 }
-    );
-}
+        if (status && order.status !== 'Pending' && status !== order.status) {
+            return NextResponse.json(
+                { error: 'You can not change Status Again' },
+                { status: 400 }
+            );
+        }
 
 
         if (!order) {

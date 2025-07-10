@@ -53,7 +53,6 @@ export async function POST(req: NextRequest) {
             status: 'Completed',
             paymentMethod: 'earnings',
             productName: product.name,
-            productCode: product.productCode,
             price: product.price,
             transactionId: transactionId
         });

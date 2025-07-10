@@ -25,11 +25,10 @@ type PaymentCardProps = {
     id: string | undefined;
     productName: string | undefined;
     price: number | undefined;
-    productCode: string | undefined;
 
 }
 
-function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) {
+function PaymentCard({ id, productName, price }: PaymentCardProps) {
     const { isAuthenticated, user, refetchUser } = useAuth();
     const [quantity, setQuantity] = useState(1);
     const [paymentMethod, setPaymentMethod] = useState("");
@@ -97,7 +96,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 }
             } catch (error) {
                 toast.error('Failed to check referral code. Please try again.');
-            } 
+            }
         } else {
             setShowPaymentMethodDialog(true);
         }
@@ -198,7 +197,6 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 formData.append('productName', productName || '');
                 formData.append('quantity', quantity.toString());
                 formData.append('price', (price || 0).toString());
-                formData.append('productCode', productCode || '');
                 formData.append('referralCode', referralCode || '');
 
                 const response = await fetch('/api/orders', {
@@ -367,7 +365,6 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 onConfirm={handlePurchaseConfirm}
                 productId={id}
                 productName={productName}
-                productCode={productCode}
                 referralCode={referralCode}
                 quantity={quantity}
                 price={price}
@@ -382,7 +379,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 productName={productName}
                 quantity={quantity}
                 referralCode={referralCode}
-                ToalPrice={TotalPrice}
+                TotalPrice={(price ?? 0) * (quantity ?? 0)}
                 transactionId={transactionId}
                 paymentType={selectedPaymentType}
             />

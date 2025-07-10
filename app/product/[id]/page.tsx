@@ -11,7 +11,6 @@ interface Product {
     id: string;
     description: string;
     name: string;
-    productCode: string;
     price: number;
     isLocked?: boolean;
     imageUrl: string;
@@ -150,7 +149,7 @@ export default async function ProductDetail({ params }: PageProps) {
                         {product?.isLocked ? (
                             <ProductLockPanel />
                         ) : (
-                            <PaymentCard id={product?.id} productName={product?.name} price={product?.price} productCode={product?.productCode} />
+                            <PaymentCard id={product?.id} productName={product?.name} price={product?.price} />
                         )}
                     </div>
                     <div className="px-4 sm:px-6">

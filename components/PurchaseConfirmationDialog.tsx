@@ -15,7 +15,6 @@ interface PurchaseConfirmationDialogProps {
     productId: string | undefined;
     productName: string | undefined;
     referralCode: string | undefined;
-    productCode: string | undefined;
     quantity: number | undefined;
     price: number | undefined;
     paymentType: 'regular' | 'earnings';
@@ -28,7 +27,6 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
     productId,
     productName,
     referralCode,
-    productCode,
     quantity,
     price,
     paymentType,
