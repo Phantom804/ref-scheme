@@ -13,13 +13,10 @@ export async function POST(req: NextRequest) {
     if (!token) {
         return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
-    // Verify token
+
     const decoded = verifyToken(token);
     if (!decoded) {
-        return NextResponse.json(
-            { success: false, message: 'Invalid token' },
-            { status: 401 }
-        );
+        return NextResponse.json({ success: false, message: 'Invalid token' }, { status: 401 });
     }
 
     try {
@@ -29,17 +26,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'Product ID and quantity are required' }, { status: 400 });
         }
 
-        const order = await Order.findOne({
+        const orders = await Order.find({
             userId: decoded.id,
             productId: productId,
             status: 'Completed',
-        });
+        }).sort({ createdAt: 1 }); // FIFO: oldest orders first
 
-        if (!order) {
-            return NextResponse.json({ message: 'You do not own this product or the order is not completed.' }, { status: 404 });
-        }
+        const totalOwnedQuantity = orders.reduce((sum, order) => sum + order.quantity, 0);
 
-        if (order.quantity < quantity) {
+        if (totalOwnedQuantity < quantity) {
             return NextResponse.json({ message: 'You do not have enough quantity to sell.' }, { status: 400 });
         }
 
@@ -48,14 +43,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'Product not found.' }, { status: 404 });
         }
 
-        const sellPrice = product.price * quantity;
+        let remainingToSell = quantity;
 
-        if (order.quantity === quantity) {
-            await Order.findByIdAndDelete(order._id);
-        } else {
-            order.quantity -= quantity;
-            await order.save();
+        for (const order of orders) {
+            if (remainingToSell <= 0) break;
+
+            if (order.quantity <= remainingToSell) {
+                remainingToSell -= order.quantity;
+                await Order.findByIdAndDelete(order._id);
+            } else {
+                order.quantity -= remainingToSell;
+                await order.save();
+                remainingToSell = 0;
+            }
         }
+
+        const sellPrice = product.price * quantity;
 
         const user = await User.findById(decoded.id);
         if (user) {
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ message: 'Product sold successfully!', totalEarning: user?.totalEarning }, { status: 200 });
+
     } catch (error) {
         console.error('Error selling product:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

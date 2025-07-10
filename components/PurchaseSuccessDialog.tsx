@@ -15,6 +15,7 @@ interface PurchaseSuccessDialogProps {
     quantity?: number;
     ToalPrice?: number;
     transactionId?: string;
+    paymentType: 'regular' | 'earnings';
 }
 
 const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
@@ -27,6 +28,7 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
     quantity,
     ToalPrice,
     transactionId = "",
+    paymentType,
 }) => {
     const currentDate = new Date().toLocaleDateString("en-US", {
         day: "numeric",
@@ -92,7 +94,7 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
             ctx.font = "bold 14px Arial";
             ctx.fillStyle = "#FFFFFF";
             ctx.textAlign = "center";
-            const message = "We've received your request. We will confirm your details in 24 hrs.";
+            const message = paymentType === 'earnings' ? "Purchase successful! Your order has been placed." : "We've received your request. We will confirm your details in 24 hrs.";
             const maxWidth = width - 40;
             wrapText(ctx, message, width / 2, checkmarkY + 50, maxWidth, 20);
 
@@ -195,9 +197,17 @@ const PurchaseSuccessDialog: React.FC<PurchaseSuccessDialogProps> = ({
                                 <Check className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
                             </div>
                         </div>
-                        <h2 className="text-base sm:text-xl font-semibold px-1">
-                            We've received your request. We will confirm your details in 24 hrs.
-                        </h2>
+                        {/* here if paymenttype is earnings then i want to show differnet message in h2 */}
+                        {paymentType === 'earnings' ? (
+                            <h2 className="text-base sm:text-xl font-semibold px-1">
+                                Purchase successful! Your order has been placed.
+                            </h2>
+                        ) : (
+                            <h2 className="text-base sm:text-xl font-semibold px-1">
+                                We've received your request. We will confirm your details in 24 hrs.
+                            </h2>
+                        )}
+                     
 
                         <div className="space-y-4 mt-6">
                             <div className="flex justify-between items-center gap-4">

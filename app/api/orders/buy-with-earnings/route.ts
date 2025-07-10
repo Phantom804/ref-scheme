@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongoose';
 import { verifyToken } from '@/lib/auth/authHelper';
+import { customAlphabet } from 'nanoid';
 import { User } from '@/lib/models/User';
 import { Product } from '@/lib/models/Product';
 import { Order } from '@/lib/models/Order';
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
         user.totalEarning -= totalPrice;
         await user.save();
 
+        const nanoid = customAlphabet('ABCDMNZ0123456789', 6);
+        const transactionId = `${nanoid()}`;
+
         const order = new Order({
             userId: user._id,
             productId: product._id,
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest) {
             productName: product.name,
             productCode: product.productCode,
             price: product.price,
-            transactionId: `txn_${Date.now()}`
+            transactionId: transactionId
         });
 
         await order.save();

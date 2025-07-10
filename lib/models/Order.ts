@@ -43,7 +43,7 @@ const OrderSchema = new Schema<IOrder>(
             default: 'Pending',
             index: true
         },
-        receiptUrl: { type: String, required: true },
+        receiptUrl: { type: String },
         // Delivery related fields
         deliveryRequested: { type: Boolean, default: false },
         deliveryStatus: {

@@ -5,12 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Check, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface PurchaseConfirmationDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (receiptFile: File | undefined, paymentType: 'regular' | 'earnings') => void;
+    onConfirm: (receiptFile?: File, paymentType?: 'regular' | 'earnings') => void;
     productId: string | undefined;
     productName: string | undefined;
     referralCode: string | undefined;
@@ -33,6 +34,7 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
     paymentType,
 }) => {
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const { user } = useAuth();
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [fileError, setFileError] = useState<string | null>(null);
 
@@ -108,9 +110,18 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-md bg-[#1A0B2E] text-white border-none">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold">Confirmation</DialogTitle>
+                    <DialogTitle className="text-xl font-semibold">
+                        {paymentType === 'regular' ? 'Payment Confirmation' : 'Buy with Earnings'}
+                    </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
+                    {paymentType === 'earnings' && (
+                        <div className="bg-green-500/10 p-4 rounded-lg mb-4">
+                            <p className="text-lg font-semibold text-green-400">Your Available Earnings: PKR {user?.totalEarning?.toFixed(2)}</p>
+                            <p className="text-sm text-gray-400 mt-1">This amount will be deducted from your earnings</p>
+                        </div>
+                    )}
+
                     <div className="flex justify-between items-center">
                         <span>Product ID</span>
                         <span className="text-right text-xs sm:text-sm md:text-base truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={productId || ""}>{productId}</span>
@@ -138,69 +149,70 @@ const PurchaseConfirmationDialog: React.FC<PurchaseConfirmationDialogProps> = ({
                     {paymentType === 'regular' && (
                         <>
                             <input
-                        type="file"
-                        hidden
-                        accept="image/png, image/jpeg, image/jpg"
-                        ref={fileInputRef}
-                        onChange={handleFileInputChange}
-                    />
-                    <div
-                        className={`border border-dashed ${previewUrl ? 'border-green-500' : 'border-gray-600'} rounded-lg p-6 text-center cursor-pointer transition-colors`}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onClick={openFileDialog}
-                    >
-                        {previewUrl ? (
-                            <div className="flex flex-col items-center">
-                                <div className="relative w-full h-32 mb-2">
-                                    <Image
-                                        src={previewUrl}
-                                        alt="Receipt preview"
-                                        fill
-                                        style={{ objectFit: 'contain' }}
-                                    />
-                                </div>
-                                <div className="text-sm text-green-500 flex items-center gap-1">
-                                    <Check size={16} />
-                                    <span>{receiptFile?.name}</span>
-                                </div>
+                                type="file"
+                                hidden
+                                accept="image/png, image/jpeg, image/jpg"
+                                ref={fileInputRef}
+                                onChange={handleFileInputChange}
+                            />
+                            <div
+                                className={`border border-dashed ${previewUrl ? 'border-green-500' : 'border-gray-600'} rounded-lg p-6 text-center cursor-pointer transition-colors`}
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onClick={openFileDialog}
+                            >
+                                {previewUrl ? (
+                                    <div className="flex flex-col items-center">
+                                        <div className="relative w-full h-32 mb-2">
+                                            <Image
+                                                src={previewUrl}
+                                                alt="Receipt preview"
+                                                fill
+                                                style={{ objectFit: 'contain' }}
+                                            />
+                                        </div>
+                                        <div className="text-sm text-green-500 flex items-center gap-1">
+                                            <Check size={16} />
+                                            <span>{receiptFile?.name}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center">
+                                        <div className="mb-2 flex items-center gap-2">
+                                            <ImageIcon className="w-6 h-6 text-gray-400" />
+                                            <span>Drag and drop or click to upload receipt image</span>
+                                        </div>
+                                        <div className="text-sm text-gray-400">JPEG/JPG, PNG formats supported (max 1MB)</div>
+                                    </div>
+                                )}
+                                {fileError && (
+                                    <div className="mt-2 text-sm text-red-500">{fileError}</div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="flex flex-col items-center">
-                                <div className="mb-2 flex items-center gap-2">
-                                    <ImageIcon className="w-6 h-6 text-gray-400" />
-                                    <span>Drag and drop or click to upload receipt image</span>
-                                </div>
-                                <div className="text-sm text-gray-400">JPEG/JPG, PNG formats supported (max 1MB)</div>
-                            </div>
-                        )}
-                        {fileError && (
-                            <div className="mt-2 text-sm text-red-500">{fileError}</div>
-                        )}
-                    </div>
-
                         </>
                     )}
-
-                    <div className="flex gap-3 mt-6">
-                        <Button
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                            onClick={handleConfirm}
-                            disabled={paymentType === 'regular' && !receiptFile}
-                        >
-                            Confirm
-                        </Button>
-                        <Button
-                            className="flex-1 bg-transparent border border-gray-600 hover:bg-gray-800 text-white"
-                            variant="outline"
-                            onClick={onClose}
-                        >
-                            Cancel
-                        </Button>
-                    </div>
                 </div>
+
+                <div className="flex gap-3 mt-6">
+                    <Button
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={handleConfirm}
+                        disabled={paymentType === 'regular' ? !receiptFile : false}
+                    >
+                        Confirm
+                    </Button>
+                    <Button
+                        className="flex-1 bg-transparent border border-gray-600 hover:bg-gray-800 text-white"
+                        variant="outline"
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </Button>
+                </div>
+
             </DialogContent>
         </Dialog>
+
     );
 };
 

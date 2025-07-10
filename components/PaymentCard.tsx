@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import PurchaseConfirmationDialog from "@/components/PurchaseConfirmationDialog";
 import PurchaseSuccessDialog from "@/components/PurchaseSuccessDialog";
+import PaymentMethodSelectionDialog from "@/components/PaymentMethodSelectionDialog"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -37,8 +38,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [transactionId, setTransactionId] = useState("");
-    const [totalPrice, setTotalPrice] = useState<number | undefined>();
-    const [paymentType, setPaymentType] = useState<'regular' | 'earnings'>('regular');
+    const [TotalPrice, setTotalPrice] = useState();
 
     const [buyer, setBuyer] = useState("");
     const [paymentDetails, setPaymentDetails] = useState<PaymentMethod[]>([]);
@@ -64,14 +64,17 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
     }, []);
 
 
+    const [showPaymentMethodDialog, setShowPaymentMethodDialog] = useState(false);
+    const [selectedPaymentType, setSelectedPaymentType] = useState<'regular' | 'earnings'>('regular');
+
+    const [isButtonDisabled, setIsButtonDisabled] = React.useState(false);
+
     const handleBuyNow = async () => {
-        setPaymentType('regular');
         if (!isAuthenticated) {
             toast.warning("Please login to continue!");
             return;
         }
         if (referralCode) {
-
             try {
                 const response = await fetch('/api/referrel-check', {
                     method: 'POST',
@@ -90,38 +93,18 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 }
 
                 if (data.success) {
-                    setShowConfirmDialog(true);
+                    setShowPaymentMethodDialog(true);
                 }
             } catch (error) {
                 toast.error('Failed to check referral code. Please try again.');
-            }
+            } 
         } else {
-            // If no referral code is entered, proceed directly
-            setShowConfirmDialog(true);
+            setShowPaymentMethodDialog(true);
         }
-    };
-
-    const handleBuyWithEarnings = async () => {
-        if (!isAuthenticated) {
-            toast.warning("Please login to continue!");
-            return;
-        }
-
-        if (!price || !user?.totalEarning) {
-            return;
-        }
-
-        const totalPrice = price * quantity;
-        if (Number(user.totalEarning) < totalPrice) {
-            toast.error("Insufficient earnings to make this purchase.");
-            return;
-        }
-
-        setPaymentType('earnings');
-        setShowConfirmDialog(true);
     };
 
     const handleSellNow = async () => {
+        setIsButtonDisabled(true);
         if (!isAuthenticated) {
             toast.warning("Please login to continue!");
             return;
@@ -153,25 +136,64 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 toast.error(data.message || 'Failed to sell product.');
             } else {
                 toast.success(data.message || 'Product sold successfully!');
+                refetchUser();
             }
         } catch (error) {
             toast.error('Failed to sell product. Please try again.');
         } finally {
             toast.dismiss(toastID);
+            setIsButtonDisabled(false);
         }
     };
 
-    const handlePurchaseConfirm = async (receiptFile?: File, paymentType: 'regular' | 'earnings' = 'regular') => {
-        if (paymentType === 'regular') {
-            if (!receiptFile) {
-                toast.error("Please upload a receipt image");
-                return;
-            }
-            let toastID = toast.loading("Placing order...");
+    const handleSelectPaymentMethod = (method: 'regular' | 'earnings') => {
+        setSelectedPaymentType(method);
+        setShowPaymentMethodDialog(false);
+        setShowConfirmDialog(true);
+    };
 
-            try {
+    const handlePurchaseConfirm = async (receiptFile?: File, paymentType?: 'regular' | 'earnings') => {
+        const isEarningsPayment = paymentType === 'earnings';
+
+        if (!isEarningsPayment && !receiptFile) {
+            toast.error("Please upload a receipt image");
+            return;
+        }
+
+        let toastID = toast.loading("Placing order...");
+
+        try {
+            if (isEarningsPayment) {
+
+                const response = await fetch('/api/orders/buy-with-earnings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        productId: id,
+                        quantity: quantity
+                    }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    toast.error(data.message || 'Failed to create order');
+                } else {
+                    setTransactionId(data.order?.transactionId || '');
+                    setTotalPrice(data.order?.totalPrice);
+                    setBuyer(user?.name || '');
+                    setShowConfirmDialog(false);
+                    setShowSuccessDialog(true);
+                    toast.success("Order placed successfully using your earnings!");
+                    refetchUser();
+                }
+            } else {
+                // Regular payment with receipt upload
                 const formData = new FormData();
-                formData.append('receipt', receiptFile);
+                formData.append('receipt', receiptFile!);
                 formData.append('productId', id || '');
                 formData.append('productName', productName || '');
                 formData.append('quantity', quantity.toString());
@@ -197,45 +219,11 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                     setShowSuccessDialog(true);
                     toast.success("Order placed successfully!");
                 }
-            } catch (error) {
-                toast.error(typeof error === 'string' ? error : 'Failed to create order. Please try again.');
-            } finally {
-                toast.dismiss(toastID);
             }
-        } else { // paymentType === 'earnings'
-            let toastID = toast.loading("Placing order with earnings...");
-
-            try {
-                const response = await fetch('/api/orders/buy-with-earnings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        productId: id,
-                        quantity: quantity,
-                    }),
-                    credentials: 'include'
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    toast.error(data.message || 'Failed to create order with earnings');
-                } else {
-                    setTransactionId(data.order.transactionId);
-                    setTotalPrice(data.order.totalPrice);
-                    setBuyer(data.user.name);
-                    setShowConfirmDialog(false);
-                    setShowSuccessDialog(true);
-                    toast.success("Order placed successfully using earnings!");
-                    refetchUser();
-                }
-            } catch (error) {
-                toast.error(typeof error === 'string' ? error : 'Failed to create order with earnings. Please try again.');
-            } finally {
-                toast.dismiss(toastID);
-            }
+        } catch (error) {
+            toast.error(typeof error === 'string' ? error : 'Failed to create order. Please try again.');
+        } finally {
+            toast.dismiss(toastID);
         }
     };
 
@@ -255,7 +243,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
 
                             {Array.isArray(paymentDetails) && paymentDetails.map((detail, index) => (
                                 <button
-                                    key={detail.id || index} // Prefer using a unique ID if available
+                                    key={detail.id || index}
                                     onClick={() => setPaymentMethod(detail.bankName)}
                                     className={`rounded-lg border px-3 py-2 bg-[#ffffff] ${paymentMethod === detail.bankName ? "border-blue-500" : "border-transparent opacity-60"
                                         }`}
@@ -290,24 +278,6 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                                 );
                             })()
                         }
-                        {isAuthenticated && user?.totalEarning && Number(user.totalEarning) > 0 && (
-                            <div className="mt-4">
-                                <div className="p-4 bg-[#2b194b] border border-[#47396d] rounded-lg text-white space-y-2">
-                                    <h5 className="text-sm font-semibold text-amber-300 uppercase tracking-wide">
-                                        Your Earnings
-                                    </h5>
-                                    <div className="text-sm">
-                                        <span className="font-medium">Available Balance:</span> PKR {Number(user.totalEarning).toFixed(2)}
-                                    </div>
-                                    <Button
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold text-base rounded-lg py-2 mt-2"
-                                        onClick={handleBuyWithEarnings}
-                                    >
-                                        Buy with Earnings
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                         <div className="mt-7">
                             <label className="block text-sm mb-1">Enter Referral Code</label>
                             <Input
@@ -339,12 +309,20 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                                 </Button>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap">
 
-                            <Button className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg py-2" onClick={handleBuyNow}>
+                            <Button
+                                className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg py-2"
+                                onClick={handleBuyNow}
+                                disabled={isButtonDisabled}
+                            >
                                 Buy Now
                             </Button>
-                            <Button className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold text-base rounded-lg py-2" onClick={handleSellNow}>
+                            <Button
+                                className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold text-base rounded-lg py-2"
+                                onClick={handleSellNow}
+                                disabled={isButtonDisabled}
+                            >
                                 Sell Now
                             </Button>
                         </div>
@@ -376,6 +354,13 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 </Card>
             </div>
 
+            <PaymentMethodSelectionDialog
+                isOpen={showPaymentMethodDialog}
+                onClose={() => setShowPaymentMethodDialog(false)}
+                onSelectMethod={handleSelectPaymentMethod}
+                totalPrice={(price ?? 0) * (quantity ?? 0)}
+            />
+
             <PurchaseConfirmationDialog
                 isOpen={showConfirmDialog}
                 onClose={() => setShowConfirmDialog(false)}
@@ -386,7 +371,7 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 referralCode={referralCode}
                 quantity={quantity}
                 price={price}
-                paymentType={paymentType}
+                paymentType={selectedPaymentType}
             />
 
             <PurchaseSuccessDialog
@@ -397,8 +382,9 @@ function PaymentCard({ id, productName, price, productCode }: PaymentCardProps) 
                 productName={productName}
                 quantity={quantity}
                 referralCode={referralCode}
-                ToalPrice={totalPrice}
+                ToalPrice={TotalPrice}
                 transactionId={transactionId}
+                paymentType={selectedPaymentType}
             />
         </>
     )

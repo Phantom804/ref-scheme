@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth/authHelper';
+import { connectToDatabase } from '@/lib/mongoose';
 import { User } from '@/lib/models/User';
 
 export async function GET(req: NextRequest) {
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
                 { status: 404 }
             );
         }
+        await connectToDatabase();
 
         const user = await User.findById(decoded.id);
         if (!user) {
@@ -46,7 +48,7 @@ export async function GET(req: NextRequest) {
                 referralCode: user.referralCode || user.phoneNumber,
                 email: user.email || null,
                 role: user.role,
-                totalEarning: user.totalEarning
+                totalEarning: user.totalEarning.toFixed(2)
             }
         });
     } catch (error) {
