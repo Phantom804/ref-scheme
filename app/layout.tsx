@@ -46,6 +46,16 @@ export default function RootLayout({
             </AuthProvider>
           </div>
         </div>
+        
+		<!-- Snackeet -->
+		<iframe
+			src="https://snkt.io/68d680e66b20a591a1fd5e79?snkt_channel=iframe"
+			allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
+			style="display: block; width:359px; aspect-ratio:359/630;
+			border: none; border-radius: 10px; background: transparent; margin: 0 auto"
+		></iframe>
+		<!-- End Snackeet -->
+		
       </body>
     </html>
   );
