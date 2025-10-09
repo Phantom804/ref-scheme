@@ -51,21 +51,6 @@ export default function RootLayout({
           </div>
         </div>
 
-        {/* Snackeet */}
-        <iframe
-          src="https://snkt.io/68d680e66b20a591a1fd5e79?snkt_channel=iframe"
-          allow="camera *; microphone *; autoplay *; encrypted-media *; fullscreen *;"
-          style={{
-            display: "block",
-            width: "359px",
-            aspectRatio: "359 / 630",
-            border: "none",
-            borderRadius: "10px",
-            background: "transparent",
-            margin: "0 auto",
-          }}
-        />
-        {/* End Snackeet */}
       </body>
     </html>
   );
